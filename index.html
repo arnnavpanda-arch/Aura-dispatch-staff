@@ -1,0 +1,2341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA Dispatch | Agency Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Montserrat:wght@400;500;600;700;800&family=Poppins:wght@400;500;600&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/style.css?v=2.9.57">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <div class="app-container">
+        <!-- Auth Screen -->
+        <div id="auth-screen" class="screen active">
+            <div class="auth-card glass-panel">
+                <div class="logo">
+                    <img src="logo.png" alt="AURA Dispatch Logo" style="max-width: 120px; display: block; margin: 0 auto 1rem;">
+                    <h1>AURA <span>Dispatch</span></h1>
+                </div>
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="admin-login">Agency Admin</button>
+                    <button class="tab-btn" data-tab="staff-login">Staff Login</button>
+                </div>
+                
+                <form id="admin-login" class="auth-form active">
+                    <h2>Admin Portal</h2>
+                    <div class="input-group">
+                        <label>Username</label>
+                        <input type="text" id="admin-username" placeholder="Enter admin username">
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="admin-password" placeholder="Enter password">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Login as Admin</button>
+                </form>
+
+                <form id="staff-login" class="auth-form">
+                    <h2>Staff Portal</h2>
+                    <div class="input-group">
+                        <label>Staff ID</label>
+                        <input type="text" id="staff-id" placeholder="Enter your Staff ID">
+                    </div>
+                    <div class="input-group">
+                        <label>Password</label>
+                        <input type="password" id="staff-password" placeholder="Enter password">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Login as Staff</button>
+                </form>
+                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+                    <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.5rem;">Database Connected 🟢</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="admin-dashboard" class="screen">
+            <nav class="glass-nav">
+                <div class="logo">AURA <span>Admin</span></div>
+                <div class="nav-links">
+                    <button class="nav-btn active" data-target="admin-register">Register Staff</button>
+                    <button class="nav-btn" data-target="admin-payments">Payments</button>
+                    <button class="nav-btn" data-target="admin-loans" id="nav-loans" style="display: none;">Loan Management</button>
+                    <button class="nav-btn" data-target="admin-shops">Manage Shops</button>
+                    <button class="nav-btn" data-target="admin-assign">Assign Shops</button>
+                    <button class="nav-btn" data-target="admin-attendance">Attendance</button>
+                    <button class="nav-btn" data-target="admin-reports">Reports</button>
+                    <button class="nav-btn" data-target="admin-leaves">Leave Requests</button>
+                    <button class="nav-btn" data-target="admin-idcards" id="nav-idcards" style="display: none;">ID Card Management</button>
+                    <button class="nav-btn" data-target="admin-md">MD Dashboard</button>
+                    <button class="nav-btn" data-target="admin-ceo">CEO Corporate</button>
+                    <button id="btn-back-to-staff" class="btn btn-secondary" style="display: none; margin-right: 0.5rem;" onclick="showScreen('staff')">Back to Staff Profile</button>
+                    <button class="btn btn-outline btn-logout">Logout</button>
+                </div>
+            </nav>
+            <main class="dashboard-content">
+
+                <!-- Leave Requests Section -->
+                <section id="admin-leaves" class="dashboard-section glass-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 id="admin-leaves-title" style="margin: 0; border: none; color: var(--primary);">Leave Requests</h2>
+                    </div>
+                    <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead style="background: rgba(0,0,0,0.4);">
+                                <tr>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Staff</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Role</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Dates</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Days</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Reason</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Status</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem; text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-leaves-tbody">
+                                <!-- Populated dynamically based on role -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Leave Serials Numbers Section (MD/CEO only) -->
+                    <div id="leave-serials-section" style="display: none; margin-top: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h2 style="margin: 0; border: none; color: var(--secondary);">Leave Serials Numbers</h2>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                <thead style="background: rgba(0,0,0,0.4);">
+                                    <tr>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Leave Serial Number</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">ID</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Staff Name</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Total Days</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem; text-align: right;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="leave-serials-tbody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ID Card Management Section -->
+                <section id="admin-idcards" class="dashboard-section glass-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="margin: 0; border: none; color: #2196F3;">ID Card Management</h2>
+                    </div>
+                    <div id="ops-idcard-section" class="mb-4">
+                        <div class="glass-panel" style="background: rgba(33, 150, 243, 0.1); border: 1px solid rgba(33, 150, 243, 0.3);">
+                            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1.5rem; margin-top: 0;">Generate premium electronic ID cards for staff members.</p>
+                            
+                            <form id="generate-idcard-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
+                                <div>
+                                    <label class="form-label">Select Staff</label>
+                                    <select id="idcard-staff-select" class="form-input" required>
+                                        <option value="">Choose Staff...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">Department</label>
+                                    <input type="text" id="idcard-dept" class="form-input" placeholder="e.g. Delivery Operations" required>
+                                </div>
+                                <div>
+                                    <label class="form-label">Valid Till</label>
+                                    <input type="date" id="idcard-valid" class="form-input" required>
+                                </div>
+                                <div>
+                                    <label class="form-label">Blood Group</label>
+                                    <input type="text" id="idcard-blood" class="form-input" placeholder="e.g. O+" required>
+                                </div>
+                                <div>
+                                    <label class="form-label">Contact Number</label>
+                                    <input type="text" id="idcard-contact" class="form-input" placeholder="e.g. +91 9876543210" required>
+                                </div>
+                                <div style="grid-column: 1 / -1;">
+                                    <label class="form-label">Company Address (Printed on Card)</label>
+                                    <input type="text" id="idcard-address-input" class="form-input" value="AURA DISPATCH PVT. LTD. | Kabisuryanagar, Ganjam, Odisha, India" required>
+                                </div>
+                                <div style="display: flex; align-items: flex-end; grid-column: 1 / -1;">
+                                    <button type="submit" class="btn btn-primary" style="width: 100%; background: #2196F3; border-color: #2196F3;">Generate ID Card</button>
+                                </div>
+                            </form>
+
+                            <h4 style="margin-bottom: 1rem; color: #64B5F6;">Generated ID Cards</h4>
+                            <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                    <thead style="background: rgba(0,0,0,0.4);">
+                                        <tr>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Staff ID</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Name</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Department</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Valid Till</th>
+                                            <th style="padding: 1rem; text-align: right; color: #94a3b8; font-size: 0.9rem;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ops-idcards-tbody">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CEO Dashboard Section -->
+                <section id="admin-ceo" class="dashboard-section glass-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="margin: 0; border: none; color: #f59e0b;">CEO Corporate Overview</h2>
+                        <button class="btn" style="background: #ef4444; color: white; border: none;" onclick="clearAllData()">🚨 Clear All Data</button>
+                    </div>
+
+                    <!-- CEO 3D Modules -->
+                    <div id="ceo-module-boxes" style="display: flex; gap: 2rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                        <div class="module-box-3d" onclick="window.openCeoModule('complaints')" style="background: linear-gradient(135deg, #ef4444, #991b1b);">
+                            <h3>Staff Complaints</h3>
+                            <p>Review and resolve employee grievances</p>
+                        </div>
+                        <div class="module-box-3d" onclick="window.openCeoModule('announcement')" style="background: linear-gradient(135deg, #8b5cf6, #5b21b6);">
+                            <h3>Official Announcement</h3>
+                            <p>Broadcast notices to all staff</p>
+                        </div>
+                        <div class="module-box-3d" onclick="window.openCeoModule('digisig')" style="background: linear-gradient(135deg, #2196F3, #1565C0);">
+                            <h3>Digital Signature Settings</h3>
+                            <p>Manage your e-signature</p>
+                        </div>
+                        <div class="module-box-3d" onclick="window.openCeoModule('fire')" style="background: linear-gradient(135deg, #f43f5e, #be123c);">
+                            <h3>Terminate Staff Contract</h3>
+                            <p>Permanently remove staff</p>
+                        </div>
+                        <div class="module-box-3d" onclick="window.openCeoModule('payroll')" style="background: linear-gradient(135deg, #f59e0b, #b45309);">
+                            <h3>Corporate Manager Payroll</h3>
+                            <p>Manage manager salaries</p>
+                        </div>
+                        <div class="module-box-3d" onclick="window.openCeoModule('loans')" style="background: linear-gradient(135deg, #10b981, #047857);">
+                            <h3>Manager Loan Requests</h3>
+                            <p>Review manager loans</p>
+                        </div>
+                    </div>
+
+                    <!-- CEO Complaints Module (Hidden by default) -->
+                    <div id="ceo-complaints-module" class="ceo-module" style="display: none; margin-bottom: 2rem;">
+                        <button class="btn btn-secondary mb-4" onclick="window.closeCeoModules()" style="background: #334155; border: none;">&larr; Back to Dashboard Overview</button>
+                        <div class="glass-panel" style="border: 1px solid rgba(239, 68, 68, 0.3);">
+                            <h3 style="margin-top: 0; color: #ef4444;">Staff Complaints Dashboard</h3>
+                            <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden;">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                    <thead style="background: rgba(239, 68, 68, 0.1);">
+                                        <tr>
+                                            <th style="padding: 1rem; color: #ef4444; font-size: 0.9rem;">Date</th>
+                                            <th style="padding: 1rem; color: #ef4444; font-size: 0.9rem;">Staff</th>
+                                            <th style="padding: 1rem; color: #ef4444; font-size: 0.9rem;">Category</th>
+                                            <th style="padding: 1rem; color: #ef4444; font-size: 0.9rem;">Status</th>
+                                            <th style="padding: 1rem; color: #ef4444; font-size: 0.9rem; text-align: right;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ceo-complaints-tbody">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="ceo-announcement-module" class="ceo-module" style="display: none; margin-bottom: 2rem;">
+                        <button class="btn btn-secondary mb-4" onclick="window.closeCeoModules()" style="background: #334155; border: none;">&larr; Back to Dashboard Overview</button>
+                        <div class="glass-panel" style="border: 1px solid rgba(139, 92, 246, 0.3);">
+                            <h3 style="margin-top: 0; color: #8b5cf6;">Publish Official Announcement</h3>
+                            <p style="color: #94a3b8; font-size: 0.9rem;">Broadcast an official notice to all staff members.</p>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label class="form-label">Subject</label>
+                                <input type="text" id="ceo-announce-subject" class="form-input" placeholder="e.g. New Office Timings">
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem;">
+                                <label class="form-label">Announcement</label>
+                                <textarea id="ceo-announce-body" class="form-input" rows="6" placeholder="Type the announcement here..."></textarea>
+                            </div>
+                            
+                            <div style="margin-bottom: 1.5rem;">
+                                <label class="form-label">Effective Date</label>
+                                <input type="date" id="ceo-announce-date" class="form-input">
+                            </div>
+                            
+                            <button class="btn btn-primary" onclick="window.publishAnnouncement()" style="background: #8b5cf6; border: none; width: 100%; margin-bottom: 2rem;">Publish & Sign Announcement</button>
+                            
+                            <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(139, 92, 246, 0.3);">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                    <thead style="background: rgba(139, 92, 246, 0.1);">
+                                        <tr>
+                                            <th style="padding: 1rem; color: #8b5cf6; font-size: 0.9rem;">Date</th>
+                                            <th style="padding: 1rem; color: #8b5cf6; font-size: 0.9rem;">Subject</th>
+                                            <th style="padding: 1rem; color: #8b5cf6; font-size: 0.9rem; text-align: right;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ceo-announcements-tbody">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3-Wallet Live Overview -->
+                    <div class="glass-panel mb-4" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); padding: 1.5rem; display: flex; gap: 1rem; justify-content: space-around; text-align: center;">
+                        <div>
+                            <p style="margin: 0; color: #94a3b8; font-size: 0.9rem;">Agency Admin Account</p>
+                            <h3 style="margin: 0.5rem 0 0 0; color: #10b981; font-size: 1.5rem;" class="live-admin-wallet">₹0.00</h3>
+                        </div>
+                        
+                        
+                        
+                    </div>
+
+
+                    
+                    
+
+
+                    <div id="ceo-digisig-module" class="ceo-module" style="display: none; margin-bottom: 2rem;">
+                        <button class="btn btn-secondary mb-4" onclick="window.closeCeoModules()" style="background: #334155; border: none;">&larr; Back to Dashboard Overview</button>
+                        <div class="glass-panel" style="background: rgba(33, 150, 243, 0.1); border: 1px solid rgba(33, 150, 243, 0.3); padding: 1.5rem;">
+                            <h3 style="margin-top: 0; margin-bottom: 1rem; color: #64B5F6;">Digital Signature Settings</h3>
+                            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">Set your digital signature below. This will be printed on all staff ID cards in a cursive font.</p>
+                            <div style="display: flex; gap: 1rem; align-items: flex-end;">
+                                <div style="flex: 1;">
+                                    <label class="form-label">CEO Digital Signature</label>
+                                    <input type="text" id="ceo-signature-input" class="form-input" placeholder="e.g. Arnnav Panda">
+                                </div>
+                                <button class="btn btn-primary" onclick="updateCEOSignature()" style="background: #2196F3; border: none;">Save Signature</button>
+                            </div>
+                            <div style="margin-top: 1rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); text-align: center;">
+                                <span style="color: #94a3b8; font-size: 0.8rem; display: block; margin-bottom: 0.5rem;">Preview</span>
+                                <div id="ceo-signature-preview" style="font-family: 'Dancing Script', cursive; font-size: 28px; color: #1565C0; font-weight: 600; min-height: 40px;">Arnnav Panda</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="ceo-fire-module" class="ceo-module" style="display: none; margin-bottom: 2rem;">
+                        <button class="btn btn-secondary mb-4" onclick="window.closeCeoModules()" style="background: #334155; border: none;">&larr; Back to Dashboard Overview</button>
+                        <h3 style="margin-top: 0; color: #ef4444;">Terminate Staff Contract</h3>
+                        <div class="glass-panel mb-4" style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); padding: 1.5rem;">
+                            <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0;">Permanently remove a staff member from the agency. This will delete their profile and access.</p>
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <select id="ceo-fire-staff-select" class="form-input" style="max-width: 300px;">
+                                    <!-- Populated dynamically -->
+                                </select>
+                                <button class="btn btn-primary" style="background: #ef4444; border-color: #ef4444;" onclick="fireStaffMember()">Fire Staff Member</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="ceo-payroll-module" class="ceo-module" style="display: none; margin-bottom: 2rem;">
+                        <button class="btn btn-secondary mb-4" onclick="window.closeCeoModules()" style="background: #334155; border: none;">&larr; Back to Dashboard Overview</button>
+                        <h3 style="margin-top: 0;">Corporate Manager Payroll</h3>
+                        <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                <thead style="background: rgba(0,0,0,0.4);">
+                                    <tr>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">ID</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Name</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Role</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Monthly Salary</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem; text-align: right;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ceo-payroll-tbody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="ceo-loan-module" class="ceo-module" style="display: none; margin-bottom: 2rem;">
+                        <button class="btn btn-secondary mb-4" onclick="window.closeCeoModules()" style="background: #334155; border: none;">&larr; Back to Dashboard Overview</button>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0; color: #10b981;">Corporate Manager Loan Requests</h3>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.2); padding: 0.5rem; border-radius: 6px;">
+                                <span style="font-size: 0.85rem; color: #10b981;">Min CIBIL required for regular staff loans:</span>
+                                <input type="number" id="ceo-cibil-cutoff-input" style="width: 70px; padding: 0.2rem; font-size: 0.85rem; background: transparent; border: 1px solid rgba(16, 185, 129, 0.4); color: white; border-radius: 4px;" value="150">
+                                <button class="btn btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem; background: #10b981; border-color: #10b981;" onclick="updateCibilCutoff()">Set</button>
+                            </div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(16, 185, 129, 0.3); margin-bottom: 2rem;">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                <thead style="background: rgba(16, 185, 129, 0.1);">
+                                    <tr>
+                                        <th style="padding: 1rem; color: #10b981; font-size: 0.9rem;">Date</th>
+                                        <th style="padding: 1rem; color: #10b981; font-size: 0.9rem;">Manager</th>
+                                        <th style="padding: 1rem; color: #10b981; font-size: 0.9rem;">Req. Amount</th>
+                                        <th style="padding: 1rem; color: #10b981; font-size: 0.9rem;">Installment Plan</th>
+                                        <th style="padding: 1rem; color: #10b981; font-size: 0.9rem; text-align: right;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ceo-loans-tbody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </section>
+
+                <!-- MD Dashboard Section -->
+                <section id="admin-md" class="dashboard-section glass-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="margin: 0; border: none; color: #3b82f6;">MD Dashboard</h2>
+                    </div>
+
+                    <!-- MD Digital Signature -->
+                    <div class="glass-panel mb-4" style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2);">
+                        <h3 style="margin-top: 0; color: #3b82f6;">MD Digital e-Signature</h3>
+                        <p style="color: #94a3b8; font-size: 0.9rem;">Type your full name to generate your legally binding e-signature.</p>
+                        <div style="display: flex; gap: 1rem; align-items: flex-start; max-width: 600px;">
+                            <div style="flex: 1;">
+                                <input type="text" id="md-signature-input" class="form-input" placeholder="e.g. Mary Major">
+                            </div>
+                            <button class="btn btn-primary" onclick="window.saveMDSignature()" style="background: #3b82f6; border-color: #3b82f6;">Save e-Signature</button>
+                        </div>
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed rgba(59, 130, 246, 0.5);">
+                            <p style="margin-top: 0; font-size: 0.8rem; color: #94a3b8;">Signature Preview:</p>
+                            <div id="md-signature-preview" style="font-family: 'Dancing Script', cursive; font-size: 28px; color: #3b82f6; font-weight: 600; min-height: 40px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- 3-Wallet Live Overview -->
+                    <div class="glass-panel mb-4" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); padding: 1.5rem; display: flex; gap: 1rem; justify-content: space-around; text-align: center;">
+                        <div>
+                            <p style="margin: 0; color: #94a3b8; font-size: 0.9rem;">Agency Admin Account</p>
+                            <h3 style="margin: 0.5rem 0 0 0; color: #10b981; font-size: 1.5rem;" class="live-admin-wallet">₹0.00</h3>
+                        </div>
+                        
+                        
+                        
+                    </div>
+
+                    <!-- EMI Credited Section (MD View) -->
+                    <div id="md-emi-credits-section" class="mb-4 mt-4">
+                        <div class="glass-panel" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2);">
+                            <h3 style="margin-top: 0; color: #10b981;">EMI Credited Section</h3>
+                            <p style="color: #94a3b8; font-size: 0.9rem;">History of EMI deductions credited to the Agency Admin Account during salary distribution.</p>
+                            <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                    <thead style="background: rgba(0,0,0,0.4);">
+                                        <tr>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Date</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Staff Name</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Staff ID</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Amount Credited</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="md-emi-credits-tbody">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Today's Approved Leaves -->
+                    <h3 style="margin-top: 1rem; color: #3b82f6;">Today's Approved Leaves</h3>
+                    <div class="glass-panel mb-4" style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); padding: 1.5rem;">
+                        <ul id="md-approved-leaves-list" style="color: #cbd5e1; margin: 0; padding-left: 1.5rem;">
+                            <!-- Populated dynamically -->
+                        </ul>
+                    </div>
+
+                    <!-- MD Verification Panel -->
+                    <div id="md-verification-panel" class="mb-4" style="display: none;">
+                        <div class="glass-panel" style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3);">
+                            <h3 style="margin-top: 0; color: #8b5cf6;">3. MD Payout Verification</h3>
+                            <p style="color: #94a3b8; font-size: 0.9rem;">Review calculated salaries, add bonuses from Agency Admin Account, and approve.</p>
+                            
+                            <div style="overflow-x: auto; margin-bottom: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                    <thead style="background: rgba(0,0,0,0.4);">
+                                        <tr>
+                                            <th style="padding: 0.8rem; color: #94a3b8; font-size: 0.85rem;">Staff Name</th>
+                                            <th style="padding: 0.8rem; color: #94a3b8; font-size: 0.85rem;">Role</th>
+                                            <th style="padding: 0.8rem; color: #94a3b8; font-size: 0.85rem;">Base Salary</th>
+                                            <th style="padding: 0.8rem; color: #94a3b8; font-size: 0.85rem;">Bonus (₹)</th>
+                                            <th style="padding: 0.8rem; color: #94a3b8; font-size: 0.85rem;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="md-verification-tbody">
+                                        <!-- Dynamically filled -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div style="text-align: right;">
+                                <button id="btn-ceo-approve-audit" class="btn btn-primary" onclick="approvePendingAudit()" style="background: #8b5cf6; border-color: #8b5cf6;">Approve & Send to Auditor</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MD Loan Approvals -->
+                    <h3 style="margin-top: 1rem; color: #3b82f6;">Direct Staff Refund / Top-Up</h3>
+                    <div class="glass-panel mb-4" style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); padding: 1.5rem;">
+                        <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0;">Transfer money directly from the Agency Admin Account to a staff member's wallet.</p>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <select id="md-refund-staff" class="form-input" style="max-width: 250px;">
+                                <!-- Populated dynamically with all staff -->
+                            </select>
+                            <input type="number" id="md-refund-amount" class="form-input" placeholder="Amount (₹)" style="max-width: 150px;">
+                            <input type="text" id="md-refund-reason" class="form-input" placeholder="Reason (e.g., Penalty Refund)" style="flex: 1;">
+                            <button class="btn btn-primary" style="background: #3b82f6; border-color: #3b82f6;" onclick="mdRefundStaff()">Transfer Funds</button>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 1rem; color: #a855f7;">Sweep Delivery Reserves</h3>
+                    <div class="glass-panel mb-4" style="background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.2); padding: 1.5rem;">
+                        <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0;">Transfer leftover delivery funds from the Delivery Boy Reserve into the Agency Admin Account.</p>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 1rem; color: #3b82f6;">Loan Verification Queue</h3>
+                    <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(59, 130, 246, 0.3); margin-bottom: 2rem;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead style="background: rgba(59, 130, 246, 0.1);">
+                                <tr>
+                                    <th style="padding: 1rem; color: #3b82f6; font-size: 0.9rem;">Date</th>
+                                    <th style="padding: 1rem; color: #3b82f6; font-size: 0.9rem;">Applicant</th>
+                                    <th style="padding: 1rem; color: #3b82f6; font-size: 0.9rem;">Approved Amount</th>
+                                    <th style="padding: 1rem; color: #3b82f6; font-size: 0.9rem;">Installment Plan</th>
+                                    <th style="padding: 1rem; color: #3b82f6; font-size: 0.9rem; text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="md-loans-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- MD Pre-Audit Bonus Review -->
+                    <div id="ceo-eod-review-panel" class="mb-4 mt-4" style="display: none;">
+                        <div class="glass-panel" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <div>
+                                    <h3 style="margin: 0; color: #3b82f6;">Pending Daily Payouts (EOD Review)</h3>
+                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #94a3b8;">Review staff payouts and allocate bonuses before Auditor verification.</p>
+                                </div>
+                                <div style="display: flex; gap: 1rem; align-items: center;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; background: rgba(0,0,0,0.3); padding: 0.5rem; border-radius: 6px;">
+                                        <span style="font-size: 0.85rem; color: #cbd5e1;">Highlight Low Pay < (₹):</span>
+                                        <input type="number" id="ceo-lowpay-input" style="width: 70px; padding: 0.2rem; font-size: 0.85rem; background: transparent; border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 4px;" value="380">
+                                        <button class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.8rem;" onclick="updateCeoThreshold()">Set</button>
+                                    </div>
+                                    <button id="btn-ceo-approve-audit" class="btn btn-primary" onclick="approvePendingAudit()" style="background: #3b82f6; border-color: #3b82f6;">Approve & Send to Auditor</button>
+                                </div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                    <thead style="background: rgba(0,0,0,0.4);">
+                                        <tr>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Staff</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Role</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Deliveries</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Status</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Base Payout</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Loan EMI</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">MD Bonus</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Total Payout</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem; text-align: right;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="ceo-eod-review-tbody">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Absentee Withholdings & Refunds Table (Moved to MD) -->
+                    <h3 style="margin-top: 2rem;">Absentee Withholdings & Refunds</h3>
+                    <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead style="background: rgba(0,0,0,0.4);">
+                                <tr>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Date</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Staff ID</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Name</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Status</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Withheld</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem; text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ceo-absentee-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Register Staff Section -->
+                <section id="admin-register" class="dashboard-section active glass-panel">
+                    <h2>Register New Staff</h2>
+                    <form id="register-form">
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label>Full Name</label>
+                                <input type="text" id="reg-name" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Mobile Number</label>
+                                <input type="tel" id="reg-mobile" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Role</label>
+                                <select id="reg-role" required onchange="document.getElementById('reg-salary-group').style.display = ['Managing Director (MD)', 'Finance Manager', 'Operations Manager', 'Auditor', 'Webcam Staff'].includes(this.value) ? 'block' : 'none'">
+                                    <option value="Delivery">Delivery Staff</option>
+                                    <option value="Technical">Technical Staff</option>
+                                    <option value="Webcam Staff">Webcam Staff</option>
+                                    <option value="Managing Director (MD)" class="manager-role-option">Managing Director (MD)</option>
+                                    <option value="Finance Manager" class="manager-role-option">Finance Manager</option>
+                                    <option value="Operations Manager" class="manager-role-option">Operations Manager</option>
+                                    <option value="Auditor" class="manager-role-option">Auditor / Analyst</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>UPI Number</label>
+                                <input type="text" id="reg-upi" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Bank Account Number</label>
+                                <input type="text" id="reg-ac" required>
+                            </div>
+                            <div class="input-group">
+                                <label>IFSC Code</label>
+                                <input type="text" id="reg-ifsc" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Branch Address</label>
+                                <input type="text" id="reg-branch" required>
+                            </div>
+                            <div class="input-group" id="reg-salary-group" style="display: none;">
+                                <label>Monthly Salary (₹)</label>
+                                <input type="number" id="reg-salary" min="0">
+                            </div>
+                            
+                            <!-- New Employment Details -->
+                            <div class="input-group">
+                                <label>Designation</label>
+                                <input type="text" id="reg-designation" placeholder="e.g. Delivery Executive" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Department</label>
+                                <input type="text" id="reg-department" placeholder="e.g. Logistics" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Employment Type</label>
+                                <select id="reg-employment-type" required>
+                                    <option value="Full-Time">Full-Time</option>
+                                    <option value="Part-Time">Part-Time</option>
+                                    <option value="Contract">Contract</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Date of Joining</label>
+                                <input type="date" id="reg-doj" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Reporting Manager</label>
+                                <input type="text" id="reg-manager" placeholder="e.g. Operations Manager" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Payment Structure</label>
+                                <select id="reg-payment-structure" required>
+                                    <option value="Commission Based">Commission Based</option>
+                                    <option value="Fixed Salary">Fixed Salary</option>
+                                    <option value="Fixed + Commission">Fixed + Commission</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-4">Register Staff / Manager</button>
+                    </form>
+
+
+                </section>
+
+                <!-- Manage Shops Section -->
+                <section id="admin-shops" class="dashboard-section glass-panel">
+                    <h2>Add New Shop</h2>
+                    <form id="add-shop-form">
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label>Shop Number</label>
+                                <input type="text" id="add-shop-number" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Shop Name</label>
+                                <input type="text" id="add-shop-name" required>
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="input-group">
+                                <label>Required Delivery Staff</label>
+                                <input type="number" id="add-shop-req-delivery" min="1" value="1" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Required Technical Staff</label>
+                                <input type="number" id="add-shop-req-tech" min="0" value="1" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-4">Add Shop</button>
+                    </form>
+                    
+                    <div class="mt-4">
+                        <h3>All Shops</h3>
+                        <div id="all-shops-list" class="list-container"></div>
+                    </div>
+                </section>
+
+                <!-- Assign Shops Section -->
+                <section id="admin-assign" class="dashboard-section glass-panel">
+                    <!-- Operations Manager Digital Signature -->
+                    <div class="glass-panel mb-4" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <h3 style="margin-top: 0; color: #10b981;">Operations Manager Digital e-Signature</h3>
+                        <p style="color: #94a3b8; font-size: 0.9rem;">Type your full name to generate your legally binding e-signature.</p>
+                        <div style="display: flex; gap: 1rem; align-items: flex-start; max-width: 600px;">
+                            <div style="flex: 1;">
+                                <input type="text" id="om-signature-input" class="form-input" placeholder="e.g. Jane Doe">
+                            </div>
+                            <button class="btn btn-primary" onclick="window.saveOMSignature()" style="background: #10b981; border-color: #10b981;">Save e-Signature</button>
+                        </div>
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed rgba(16, 185, 129, 0.5);">
+                            <p style="margin-top: 0; font-size: 0.8rem; color: #94a3b8;">Signature Preview:</p>
+                            <div id="om-signature-preview" style="font-family: 'Dancing Script', cursive; font-size: 28px; color: #10b981; font-weight: 600; min-height: 40px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Auto-Generate Controls -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding: 1.5rem; background: rgba(16, 185, 129, 0.1); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <div>
+                            <h3 style="margin-top: 0; color: #10b981;">Automatic Shop Assignment System</h3>
+                            <p style="margin: 0; font-size: 0.85rem; color: #94a3b8;">Randomly assigns non-absent staff to all available shops. Unassigned staff go to Standby.</p>
+                        </div>
+                        <button class="btn btn-primary" style="background: #10b981; border-color: #10b981;" onclick="generateAutoAssignments()">Auto-Generate Assignments</button>
+                    </div>
+
+                    <!-- Proposed Auto-Assignments Review Panel -->
+                    <div id="auto-assign-review-panel" class="mb-4" style="display: none;">
+                        <div class="glass-panel" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <div>
+                                    <h3 style="margin: 0; color: #3b82f6;">Proposed Assignments (Not Finalized)</h3>
+                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #94a3b8;">Review the generated list below. Click Finalize to lock them in.</p>
+                                </div>
+                                <div>
+                                    <button class="btn btn-secondary" onclick="document.getElementById('auto-assign-review-panel').style.display='none'">Cancel</button>
+                                    <button class="btn btn-primary" style="background: #3b82f6; border-color: #3b82f6; margin-left: 0.5rem;" onclick="finalizeAutoAssignments()">Finalize Assignments</button>
+                                </div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                    <thead style="background: rgba(0,0,0,0.4);">
+                                        <tr>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Shop Name</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Proposed Delivery</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Proposed Technical</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="auto-assign-review-tbody">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(0,0,0,0.1); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                        <h3 style="margin-top: 0;">Search & Quick Assign by Staff ID</h3>
+                        <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                            <input type="text" id="search-staff-id" class="input-group" style="flex: 1; padding: 0.75rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white;" placeholder="Enter Staff ID (e.g. DEL-1234)">
+                            <button class="btn btn-secondary" type="button" onclick="searchStaff()">Search Profile</button>
+                        </div>
+                        <div id="staff-search-result" class="hidden mt-4" style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px;">
+                            <!-- Filled by JS -->
+                        </div>
+                    </div>
+
+                    <h2>Assign Staff to Shops</h2>
+                    <form id="assign-form">
+                        <div class="input-group">
+                            <label>Select Shop</label>
+                            <select id="assign-shop-select" required>
+                                <!-- Populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Select Delivery Staff</label>
+                            <div id="assign-delivery-container" style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); padding: 0.75rem; border-radius: 4px; display: flex; flex-direction: column; gap: 0.5rem;">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Select Technical Staff</label>
+                            <div id="assign-technical-container" style="max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.2); padding: 0.75rem; border-radius: 4px; display: flex; flex-direction: column; gap: 0.5rem;">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-4">Assign Shop</button>
+                    </form>
+                    
+                    <div class="mt-4" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem;">
+                        <div>
+                            <h3>Current Assignments</h3>
+                            <div id="assignments-list" class="list-container"></div>
+                        </div>
+                        <div>
+                            <h3 style="color: #f59e0b;">Standby Staff</h3>
+                            <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 0;">Available for manual reassignment.</p>
+                            <div id="standby-staff-list" class="list-container" style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2);">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Attendance Section -->
+                <section id="admin-attendance" class="dashboard-section glass-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="margin: 0; border: none;">Daily Staff Attendance</h2>
+                        <div>
+                            <button class="btn btn-secondary" onclick="startScanner('checkin')" style="margin-right: 0.5rem; background: #10b981; border: none;">🟢 Check-In Scanner</button>
+                            <button class="btn btn-secondary" onclick="startScanner('checkout')" style="margin-right: 0.5rem; background: #f59e0b; border: none;">🔴 Check-Out Scanner</button>
+                            <button class="btn btn-primary" onclick="saveAttendance()">Save Attendance</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Scanner UI -->
+                    <div id="scanner-container" style="display: none; background: rgba(0,0,0,0.4); border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; text-align: center; border: 1px solid rgba(255,255,255,0.1); position: relative;">
+                        <h3 style="margin-top: 0; color: var(--primary);">Webcam Barcode Scanner</h3>
+                        <p style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 1rem;">Hold Employee ID card barcode in front of the camera.</p>
+                        <div id="reader" style="width: 100%; max-width: 500px; margin: 0 auto; border-radius: 8px; overflow: hidden; border: 2px solid rgba(16, 185, 129, 0.5);"></div>
+                        <button class="btn btn-danger" onclick="stopScanner()" style="margin-top: 1rem; background: #ef4444; border: none;">Stop Scanner</button>
+                        
+                        <!-- Success Overlay -->
+                        <div id="scan-success-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); border-radius: 8px; z-index: 10; flex-direction: column; justify-content: center; align-items: center;">
+                            <div style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: 12px; padding: 2rem; width: 80%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+                                <h2 style="margin: 0 0 1rem 0; color: #10b981; text-align: center;">✅ Attendance Marked!</h2>
+                                <div style="display: flex; gap: 1rem; align-items: center;">
+                                    <div style="width: 80px; height: 80px; border-radius: 50%; background: #1e293b; border: 2px solid #10b981; display: flex; justify-content: center; align-items: center; font-size: 2rem; color: #94a3b8;">
+                                        👤
+                                    </div>
+                                    <div style="text-align: left; flex: 1;">
+                                        <h3 id="scan-emp-name" style="margin: 0 0 0.25rem 0; color: white;"></h3>
+                                        <p style="margin: 0; font-size: 0.9rem; color: #94a3b8;"><span id="scan-emp-id"></span> • <span id="scan-emp-dept"></span></p>
+                                        <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: #cbd5e1;" id="scan-emp-desig"></p>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 1.5rem; background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; text-align: left;">
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.85rem;">
+                                        <div><span style="color: #94a3b8;">Status:</span> <strong id="scan-status" style="color: #10b981;">Present</strong></div>
+                                        <div><span style="color: #94a3b8;">Date:</span> <strong id="scan-date" style="color: white;"></strong></div>
+                                        <div><span style="color: #94a3b8;">Time:</span> <strong id="scan-time" style="color: white;"></strong></div>
+                                        <div id="scan-hours-container" style="display: none;"><span style="color: #94a3b8;">Total Hours:</span> <strong id="scan-hours" style="color: #f59e0b;"></strong></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card mb-4" style="background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); padding: 1rem; border-radius: 8px;">
+                        <p style="margin: 0; font-size: 0.9rem;"><strong>Important:</strong> Set today's attendance before running the End of Day Distribution. By default, all staff are considered "Present". Half-Day or Absent staff will have their unpaid salaries transferred to the Admin Wallet.</p>
+                    </div>
+
+                    <div id="agency-timings-panel" class="dashboard-section glass-panel mb-4" style="border: 1px solid rgba(16, 185, 129, 0.3); padding: 1.5rem;">
+                        <h3 style="margin-top: 0; color: #10b981; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Agency Timings Settings</h3>
+                        <div class="grid-4" style="gap: 1rem;">
+                            <div class="input-group">
+                                <label style="font-size: 0.85rem; color: #94a3b8;">Check-In Start</label>
+                                <input type="time" id="timing-checkin-start" style="padding: 0.5rem;">
+                            </div>
+                            <div class="input-group">
+                                <label style="font-size: 0.85rem; color: #94a3b8;">Check-In Close</label>
+                                <input type="time" id="timing-checkin-end" style="padding: 0.5rem;">
+                            </div>
+                            <div class="input-group">
+                                <label style="font-size: 0.85rem; color: #94a3b8;">Check-Out Start</label>
+                                <input type="time" id="timing-checkout-start" style="padding: 0.5rem;">
+                            </div>
+                            <div class="input-group">
+                                <label style="font-size: 0.85rem; color: #94a3b8;">Check-Out Close</label>
+                                <input type="time" id="timing-checkout-end" style="padding: 0.5rem;">
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 1rem; align-items: flex-end; margin-top: 1rem;">
+                            <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                                <label style="font-size: 0.85rem; color: #94a3b8;">Half Day Granted (After X Minutes)</label>
+                                <input type="number" id="timing-halfday-minutes" min="1" max="1440" style="padding: 0.5rem;">
+                            </div>
+                            <button class="btn btn-primary" onclick="saveAgencyTimings()" style="background: #10b981; border-color: #10b981; padding: 0.6rem 1.5rem;">Save Timings</button>
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                            <thead style="background: rgba(0,0,0,0.4);">
+                                <tr>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Staff ID</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Name</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Role</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem; text-align: center;">Check-In</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem; text-align: center;">Check-Out</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem; text-align: center;">Total Hours</th>
+                                    <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem; text-align: center;">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-list-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Attendance Reports Section -->
+                    <div id="admin-attendance-reports" style="margin-top: 2rem;">
+                        <div class="print-hide" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h2 style="margin: 0; border: none;">Attendance Reports</h2>
+                        <div style="display: flex; gap: 1rem;">
+                            <button class="btn btn-outline" onclick="document.getElementById('monthly-report-view').style.display='block'; document.getElementById('daywise-report-view').style.display='none';">Monthly Summary</button>
+                            <button class="btn btn-outline" onclick="document.getElementById('monthly-report-view').style.display='none'; document.getElementById('daywise-report-view').style.display='block';">Day-Wise Log</button>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Report View -->
+                    <div id="monthly-report-view">
+                        <div class="print-only" style="display: none; text-align: center; margin-bottom: 2rem;">
+                            <img src="logo.png" alt="AURA Dispatch" style="max-width: 120px;">
+                            <h2 style="color: #000; margin-top: 0.5rem;">Agency Attendance Report - Monthly Summary</h2>
+                        </div>
+                        <div class="print-hide" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0; color: var(--primary);">Monthly Attendance Summary</h3>
+                            <button class="btn btn-secondary" onclick="printSection('monthly-report-view')" style="padding: 0.5rem 1rem;">🖨️ Print Monthly Report</button>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                <thead style="background: rgba(0,0,0,0.4);">
+                                    <tr>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Staff ID</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Name</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Role</th>
+                                        <th style="padding: 1rem; color: #10b981; font-size: 0.9rem; text-align: center;">Total Present</th>
+                                        <th style="padding: 1rem; color: #f59e0b; font-size: 0.9rem; text-align: center;">Total Half Day</th>
+                                        <th style="padding: 1rem; color: #ef4444; font-size: 0.9rem; text-align: center;">Total Absent</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="monthly-attendance-tbody">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Day-Wise Report View -->
+                    <div id="daywise-report-view" style="display: none; margin-top: 2rem;">
+                        <div class="print-only" style="display: none; text-align: center; margin-bottom: 2rem;">
+                            <img src="logo.png" alt="AURA Dispatch" style="max-width: 120px;">
+                            <h2 style="color: #000; margin-top: 0.5rem;">Agency Attendance Report - Day-Wise Log</h2>
+                        </div>
+                        <div class="print-hide" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0; color: #8b5cf6;">Day-Wise Attendance Log</h3>
+                            <button class="btn btn-secondary" onclick="printSection('daywise-report-view')" style="padding: 0.5rem 1rem;">🖨️ Print Day-Wise Report</button>
+                        </div>
+                        <div id="daywise-attendance-container" style="display: grid; gap: 1rem;">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Payments Section -->
+                <section id="admin-loans" class="dashboard-section glass-panel">
+                    <h2>Finance Manager - Loan Administration</h2>
+                    
+                    <h3 style="margin-top: 1rem;">Pending Loan Applications</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Loan ID</th>
+                                    <th>Applicant Details</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-loans-tbody">
+                                <!-- Loans populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 style="margin-top: 2rem;">All Generated Loans</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Loan ID</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-generated-loans-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                
+                <section id="admin-payments" class="dashboard-section glass-panel">
+                    <!-- Finance Manager Digital Signature -->
+                    <div class="glass-panel mb-4" style="background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.2);">
+                        <h3 style="margin-top: 0; color: #8b5cf6;">Finance Manager Digital e-Signature</h3>
+                        <p style="color: #94a3b8; font-size: 0.9rem;">Type your full name to generate your legally binding e-signature.</p>
+                        <div style="display: flex; gap: 1rem; align-items: flex-start; max-width: 600px;">
+                            <div style="flex: 1;">
+                                <input type="text" id="fm-signature-input" class="form-input" placeholder="e.g. Richard Roe">
+                            </div>
+                            <button class="btn btn-primary" onclick="window.saveFMSignature()" style="background: #8b5cf6; border-color: #8b5cf6;">Save e-Signature</button>
+                        </div>
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed rgba(139, 92, 246, 0.5);">
+                            <p style="margin-top: 0; font-size: 0.8rem; color: #94a3b8;">Signature Preview:</p>
+                            <div id="fm-signature-preview" style="font-family: 'Dancing Script', cursive; font-size: 28px; color: #8b5cf6; font-weight: 600; min-height: 40px;"></div>
+                        </div>
+                    </div>
+
+                    <h2>Process Payments & Commission</h2>
+                    
+                    <div class="glass-panel mb-4" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <form id="payment-form" style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; align-items: end;">
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; color: #94a3b8;">Select Shop</label>
+                                <select id="pay-shop" class="input-group" style="margin-bottom: 0; padding: 0.8rem;" required>
+                                    <option value="" disabled selected>Choose a shop...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; color: #94a3b8;">Amount (₹)</label>
+                                <input type="number" id="pay-amount" class="input-group" style="margin-bottom: 0;" placeholder="e.g. 500" required min="1">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="background: #10b981; border-color: #10b981;">Process Commission</button>
+                        </form>
+                    </div>
+                    <div id="payment-breakdown" class="mb-4"></div>
+                    
+                    <div class="glass-panel mb-4" style="background: rgba(79, 70, 229, 0.1); border: 1px solid rgba(79, 70, 229, 0.3); padding: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                <button id="btn-eod-distribute" class="btn btn-secondary">1. Start Process Cycle</button>
+                                <button class="btn print-hide" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444;" onclick="window.forceResetCycle()">Force Reset Cycle</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+
+                    <div id="finance-calculation-panel" class="mb-4" style="display: none;">
+                        <div class="glass-panel" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+                            <h3 style="margin-top: 0; color: #10b981;">2. Finance Salary Calculation</h3>
+                            <p style="color: #94a3b8; font-size: 0.9rem;">Auditor has submitted the delivery counts. Enter the per-order rate to calculate salaries.</p>
+                            <div style="display: flex; gap: 1rem; align-items: center;">
+                                
+                                <input type="number" id="finance-per-order" placeholder="Delivery Rate (₹)" style="max-width: 150px;">
+                                <input type="number" id="finance-tech-rate" placeholder="Tech Rate (₹)" style="max-width: 150px;">
+
+                                <button class="btn btn-primary" style="background: #10b981; border-color: #10b981;" onclick="financeCalculatePayouts()">Calculate & Send to MD</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="finance-waiting-md" class="mb-4" style="display: none;">
+                        <div class="glass-panel" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); text-align: center;">
+                            <h3 style="margin-top: 0; color: #10b981;">✅ Sent to Managing Director</h3>
+                            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 0;">You have successfully completed the Finance Calculation. The salary sheet has been sent to the MD's Dashboard for final review.</p>
+                        </div>
+                    </div>
+
+                    <div id="emi-credits-section" class="mb-4 mt-4">
+                        <div class="glass-panel" style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2);">
+                            <h3 style="margin-top: 0; color: #10b981;">EMI Credited Section</h3>
+                            <p style="color: #94a3b8; font-size: 0.9rem;">History of EMI deductions credited to the Agency Admin Account during salary distribution.</p>
+                            <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                    <thead style="background: rgba(0,0,0,0.4);">
+                                        <tr>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Date</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Staff Name</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Staff ID</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Amount Credited</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="emi-credits-tbody">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Reports Section -->
+                <section id="admin-reports" class="dashboard-section glass-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                        <h2 style="margin-bottom: 0; border: none;">System Master Report</h2>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <div>
+                                <label style="margin-right: 0.5rem; font-weight: bold;">Select Date:</label>
+                                <input type="date" id="report-date-filter" class="input-group" style="padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white;">
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <select id="print-section-select" class="input-group" style="margin-bottom: 0; padding: 0.5rem; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.2); color: white;">
+                                    <option value="all">Print Full Report</option>
+                                    <option value="section-shops">Shops Only</option>
+                                    <option value="section-staff">Staff Only</option>
+                                    <option value="section-transactions">Transactions Only</option>
+                                    <option value="section-shopsummary">Shop Summary</option>
+                                    <option value="section-eod">EOD Distributions</option>
+                                    <option value="section-staffearnings">Staff Earnings</option>
+                                </select>
+                                <button id="print-report" class="btn btn-secondary" style="padding: 0.5rem 1rem;">🖨️ Print Selected</button>
+                            </div>
+                        </div>
+                    </div>
+                        
+                    
+                    
+                    
+                    
+                    <!-- Auditor Delivery Counts Panel -->
+                    <div id="auditor-deliveries-log" class="mb-4" style="display: none;">
+                        <div class="glass-panel" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);">
+                            <h3 style="margin-top: 0; color: #f59e0b;">Auditor: Verify Daily Delivery Counts</h3>
+                            <p style="color: #94a3b8; font-size: 0.9rem;">Finance has started the Process Cycle. Please enter the actual deliveries completed by each staff member today.</p>
+                            
+                            <div id="deliveries-log-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                                <!-- Dynamically populated by JS -->
+                            </div>
+                            
+                            <!-- Auditor OTP Verification Table -->
+                            <div style="margin-top: 2rem; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                    <h4 style="margin: 0; color: #f59e0b;">Submitted Delivery OTPs</h4>
+                                    <div>
+                                        <select id="auditor-otp-shop-filter" onchange="window.renderAuditorOtpTable()" class="input-group" style="margin-bottom: 0; min-width: 200px;">
+                                            <option value="All">All Shops</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="list-container" style="max-height: 300px; overflow-y: auto;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8; text-align: left;">
+                                                <th style="padding: 0.5rem 1rem;">Time</th>
+                                                <th style="padding: 0.5rem 1rem;">Shop</th>
+                                                <th style="padding: 0.5rem 1rem;">Staff</th>
+                                                <th style="padding: 0.5rem 1rem;">OTP</th>
+                                                <th style="padding: 0.5rem 1rem;">Order Amt</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="auditor-otp-tbody">
+                                            <!-- Dynamically populated by JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 1.5rem; text-align: right;">
+                                <button class="btn btn-primary" style="background: #f59e0b; border-color: #f59e0b; color: white;" onclick="window.saveDailyDeliveries()">Submit Verified Counts to Finance</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    <!-- Auditor Settings -->
+                    <div class="glass-panel mb-4" style="background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.2);">
+                        <h3 style="margin-top: 0; color: #f59e0b;">Auditor Digital e-Signature</h3>
+                        <p style="color: #94a3b8; font-size: 0.9rem;">Type your full name to generate your legally binding e-signature.</p>
+                        
+                        <div style="display: flex; gap: 1rem; align-items: flex-start; max-width: 600px;">
+                            <div style="flex: 1;">
+                                <input type="text" id="auditor-signature-input" class="form-input" placeholder="e.g. John Doe">
+                            </div>
+                            <button class="btn btn-primary" onclick="window.saveAuditorSignature()" style="background: #f59e0b; border-color: #f59e0b;">Save e-Signature</button>
+                        </div>
+                        
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed rgba(245,158,11,0.5);">
+                            <p style="margin-top: 0; font-size: 0.8rem; color: #94a3b8;">Signature Preview:</p>
+                            <div id="auditor-signature-preview" style="font-family: 'Dancing Script', cursive; font-size: 28px; color: #f59e0b; font-weight: 600; min-height: 40px;"></div>
+                        </div>
+                    </div>
+
+                    <div id="audit-verification-panel" class="mb-4" style="display: none;">
+                        <div class="glass-panel" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3);">
+                            <div class="print-hide" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h3 style="margin: 0; color: #f59e0b;">Awaiting Auditor Verification</h3>
+                                <div style="display: flex; gap: 1rem; align-items: center;">
+                                    <button class="btn btn-secondary" onclick="printSection('audit-verification-panel')" style="padding: 0.5rem 1rem;">🖨️ Print Report</button>
+                                    <button id="btn-verify-distribute" class="btn btn-primary" onclick="verifyAndDistribute()" style="background: #f59e0b; border-color: #f59e0b; color: white;">Verify & Distribute Salaries</button>
+                                </div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                    <thead style="background: rgba(0,0,0,0.4);">
+                                        <tr>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Staff ID & Name</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Role</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Deliveries</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Assigned Shops</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Status</th>
+                                            <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Total Day Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="audit-verification-tbody">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Auditor: Saved Reports -->
+                    <h3 style="margin-top: 1rem; color: #3b82f6;">Saved Daily Salary Payment Reports</h3>
+                    <div class="glass-panel mb-4" style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); padding: 1.5rem;">
+                        <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0;">Reports finalized and saved by the Auditor.</p>
+                        <div style="background: rgba(0,0,0,0.2); border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                                <thead style="background: rgba(0,0,0,0.4);">
+                                    <tr>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Report ID</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Date</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Auditor</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Net Paid</th>
+                                        <th style="padding: 1rem; color: #94a3b8; font-size: 0.9rem;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ceo-reports-tbody">
+                                    <!-- Dynamically filled -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div id="master-report-content" style="background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); color: #1e293b; padding: 2rem; border-radius: 12px; overflow-x: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.05); position: relative;">
+                        <!-- Content injected dynamically -->
+                    </div>
+
+                </section>
+
+            </main>
+        </div>
+
+        
+
+        <!-- Staff Dashboard -->
+        <div id="staff-dashboard" class="screen">
+            <nav class="glass-nav">
+                <div class="logo">AURA <span>Staff</span></div>
+                <div class="user-info" style="display: flex; align-items: center;">
+                    <span id="staff-user-name" class="mr-3"></span>
+                    <span id="staff-user-role" class="badge"></span>
+                </div>
+                <div>
+                    <button id="btn-view-id-card" class="btn btn-secondary" style="margin-right: 0.5rem; display: none; background: #2196F3; border-color: #2196F3; color: white;" onclick="window.showIDCard(currentUser.id)">View ID Card</button>
+                    <button id="btn-view-joining-letter" class="btn btn-secondary" style="margin-right: 0.5rem;" onclick="window.showJoiningLetter(currentUser.id)">View Joining Letter</button>
+                    <button id="btn-view-announcement" class="btn btn-secondary" style="margin-right: 0.5rem; background: #8b5cf6; border-color: #8b5cf6; color: white;" onclick="window.viewAnnouncementList()">View Announcements</button>
+                    <button id="btn-admin-workspace" class="btn btn-primary" style="display: none; margin-right: 0.5rem;" onclick="showScreen('admin')">Go to Admin Workspace</button>
+                    <button class="btn btn-outline btn-logout">Logout</button>
+                </div>
+            </nav>
+            <main class="dashboard-content">
+                <div id="staff-home-view">
+                <!-- Staff Analytics / Performance Monitor -->
+                <div class="glass-panel mb-4" style="grid-column: 1 / -1; background: rgba(79, 70, 229, 0.05); border: 1px solid rgba(79, 70, 229, 0.2);">
+                    <h2 style="margin-top: 0; margin-bottom: 1rem; font-size: 1.2rem; color: var(--primary);">My Performance Monitor</h2>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <div class="info-card" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); padding: 1rem; border-radius: 8px; border-width: 1px; border-style: solid;">
+                            <h4 style="margin: 0; color: #94a3b8; font-size: 0.9rem;">Today's Earning</h4>
+                            <div id="staff-today-earn" style="font-size: 1.5rem; font-weight: bold; color: #10b981; margin-top: 0.5rem;">₹0.00</div>
+                        </div>
+                        <div id="staff-deliveries-card" class="info-card" style="display: none; background: rgba(236, 72, 153, 0.1); border-color: rgba(236, 72, 153, 0.3); padding: 1rem; border-radius: 8px; border-width: 1px; border-style: solid;">
+                            <h4 style="margin: 0; color: #94a3b8; font-size: 0.9rem;">Today's Deliveries</h4>
+                            <div id="staff-today-deliveries" style="font-size: 1.5rem; font-weight: bold; color: #ec4899; margin-top: 0.5rem;">0</div>
+                        </div>
+                        <div id="staff-total-deliveries-card" class="info-card" style="display: none; background: rgba(236, 72, 153, 0.15); border-color: rgba(236, 72, 153, 0.4); padding: 1rem; border-radius: 8px; border-width: 1px; border-style: solid;">
+                            <h4 style="margin: 0; color: #94a3b8; font-size: 0.9rem;">Total Deliveries</h4>
+                            <div id="staff-total-deliveries" style="font-size: 1.5rem; font-weight: bold; color: #ec4899; margin-top: 0.5rem;">0</div>
+                        </div>
+                        <div id="staff-status-card" class="info-card" style="background: rgba(59, 130, 246, 0.1); border-color: rgba(59, 130, 246, 0.3); padding: 1rem; border-radius: 8px; border-width: 1px; border-style: solid;">
+                            <h4 style="margin: 0; color: #94a3b8; font-size: 0.9rem;">Today's Status</h4>
+                            <div id="staff-attendance-status" style="font-size: 1.5rem; font-weight: bold; color: #3b82f6; margin-top: 0.5rem;">Present</div>
+                        </div>
+                        <div class="info-card" style="background: rgba(14, 165, 233, 0.1); border-color: rgba(14, 165, 233, 0.3); padding: 1rem; border-radius: 8px; border-width: 1px; border-style: solid;">
+                            <h4 style="margin: 0; color: #94a3b8; font-size: 0.9rem;">Agency CIBIL Score</h4>
+                            <div style="display: flex; align-items: baseline; gap: 8px;">
+                                <div id="staff-cibil-score" style="font-size: 1.5rem; font-weight: bold; color: #0ea5e9; margin-top: 0.5rem;">500</div>
+                                <span id="staff-cibil-badge" style="font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; background: #94a3b8; color: white;">Evaluating</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div id="staff-assigned-shops-panel" class="glass-panel">
+                        <h2>My Assigned Shops</h2>
+                        <div id="staff-shops" class="list-container mt-4"></div>
+                    </div>
+                    <div class="glass-panel">
+                        <h2>My Payouts (Wallet)</h2>
+                        <div class="wallet-balance">
+                            <h3>Total Earnings</h3>
+                            <div class="amount" id="staff-earnings">₹0.00</div>
+                            <p class="upi-info">Linked UPI: <strong id="staff-upi-display"></strong></p>
+                        </div>
+                    </div>
+                </div>
+                    
+                <!-- 3D Module Boxes -->
+                <div style="display: flex; gap: 2rem; margin-top: 2rem; flex-wrap: wrap;">
+                    <div class="module-box-3d" id="otp-3d-box" onclick="window.openStaffModule('otp')" style="background: linear-gradient(135deg, #f59e0b, #ea580c); display: none;">
+                        <h3>Delivery OTP Section</h3>
+                        <p>Submit OTPs for completed deliveries</p>
+                    </div>
+                    <div class="module-box-3d" onclick="window.openStaffModule('leave')" style="background: linear-gradient(135deg, #4f46e5, #8b5cf6);">
+                        <h3>Leave Application</h3>
+                        <p>Apply for leave and view history</p>
+                    </div>
+                    <div class="module-box-3d" onclick="window.openStaffModule('loan')" style="background: linear-gradient(135deg, #059669, #10b981);">
+                        <h3>Loan Management Portal</h3>
+                        <p>Apply for loans and track payments</p>
+                    </div>
+                    <div class="module-box-3d" onclick="window.openStaffModule('complaint')" style="background: linear-gradient(135deg, #dc2626, #ef4444);">
+                        <h3>Complaint Section</h3>
+                        <p>File a complaint and view history</p>
+                    </div>
+                </div>
+                </div>
+
+                <!-- Staff Leave Module -->
+                <div id="staff-leave-module" style="display: none;">
+                    <button class="btn btn-secondary mb-4" onclick="window.closeStaffModules()" style="background: #334155; border: none;">&larr; Back to Dashboard</button>
+                    <div class="glass-panel" style="grid-column: 1 / -1; margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h2>Leave Application</h2>
+                        </div>
+                        <div class="grid-2">
+                            <div>
+                                <form id="leave-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                                    <div class="input-group">
+                                        <label>Start Date</label>
+                                        <input type="date" id="leave-start" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>End Date</label>
+                                        <input type="date" id="leave-end" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Total Days</label>
+                                        <input type="number" id="leave-days" min="1" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Reason</label>
+                                        <select id="leave-reason" required>
+                                            <option value="">-- Select Reason --</option>
+                                            <option value="Health issue">Health issue</option>
+                                            <option value="Personal problem">Personal problem</option>
+                                            <option value="Family function">Family function</option>
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" style="margin-top: 0.5rem;">Send Leave Request</button>
+                                </form>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                                <h3 style="margin-top: 0; color: var(--primary);">My Leave History</h3>
+                                <div id="staff-leave-history" class="list-container mt-2" style="max-height: 250px; overflow-y: auto;">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Staff Loan Module -->
+                <div id="staff-loan-module" style="display: none;">
+                    <button class="btn btn-secondary mb-4" onclick="window.closeStaffModules()" style="background: #334155; border: none;">&larr; Back to Dashboard</button>
+                    <div id="staff-loan-section" class="glass-panel">
+                        <h2>Loan Management Portal</h2>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                            <!-- Apply Form -->
+                            <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px;">
+                                <h3 style="margin-top: 0; color: var(--primary);">Apply for Loan</h3>
+                                <form id="loan-application-form">
+                                    <div class="input-group">
+                                        <label>Email Address</label>
+                                        <input type="email" id="loan-email" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Requested Loan Amount (₹)</label>
+                                        <input type="number" id="loan-req-amount" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Purpose of Loan</label>
+                                        <input type="text" id="loan-purpose" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Repayment Type</label>
+                                        <select id="loan-installment-type" required>
+                                            <option value="Daily">Daily Installment</option>
+                                            <option value="Monthly">Monthly Installment</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Preferred Installment Amount (₹)</label>
+                                        <input type="number" id="loan-req-installments" min="1" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Witness Name</label>
+                                        <input type="text" id="loan-witness-name" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Witness Mobile Number</label>
+                                        <input type="tel" id="loan-witness-mobile" required>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Relationship with Applicant</label>
+                                        <input type="text" id="loan-witness-relation" required>
+                                    </div>
+                                    <div style="margin: 1rem 0; font-size: 0.85rem; color: #94a3b8; display: flex; gap: 0.5rem; align-items: flex-start;">
+                                        <input type="checkbox" id="loan-declaration" required style="margin-top: 3px;">
+                                        <label for="loan-declaration">I declare that the information provided is true and I agree to the automated deductions of loan installments from my earnings/salary.</label>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Loan Application</button>
+                                </form>
+                            </div>
+                            <!-- Loan History -->
+                            <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 8px;">
+                                <h3 style="margin-top: 0; color: var(--primary);">My Loans</h3>
+                                <div id="staff-loans-history" class="list-container" style="max-height: 400px; overflow-y: auto;">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Staff Complaint Module -->
+                <div id="staff-complaint-module" style="display: none;">
+                    <button class="btn btn-secondary mb-4" onclick="window.closeStaffModules()" style="background: #334155; border: none;">&larr; Back to Dashboard</button>
+                    <div class="glass-panel" style="grid-column: 1 / -1; margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h2>Complaint Section</h2>
+                        </div>
+                        <div class="grid-2">
+                            <div>
+                                <form id="complaint-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                                    <div class="input-group">
+                                        <label>Complaint Category</label>
+                                        <select id="comp-category" required>
+                                            <option value="">-- Select Category --</option>
+                                            <option value="Salary & Payment Issue">Salary & Payment Issue</option>
+                                            <option value="Attendance Issue">Attendance Issue</option>
+                                            <option value="Leave Issue">Leave Issue</option>
+                                            <option value="Delivery Assignment Issue">Delivery Assignment Issue</option>
+                                            <option value="Shop Allocation Issue">Shop Allocation Issue</option>
+                                            <option value="Customer Misconduct">Customer Misconduct</option>
+                                            <option value="Staff Misconduct">Staff Misconduct</option>
+                                            <option value="Manager Complaint">Manager Complaint</option>
+                                            <option value="Technical/System Error">Technical/System Error</option>
+                                            <option value="Loan Issue">Loan Issue</option>
+                                            <option value="ID Card Issue">ID Card Issue</option>
+                                            <option value="Equipment Damage">Equipment Damage</option>
+                                            <option value="Workplace Safety">Workplace Safety</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group" id="comp-other-category-group" style="display: none;">
+                                        <label>Other Category</label>
+                                        <input type="text" id="comp-other-category" placeholder="Specify category">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Complaint Subject</label>
+                                        <input type="text" id="comp-subject" required placeholder="Brief title of the issue">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Complete Description of Complaint</label>
+                                        <textarea id="comp-desc" required rows="4" placeholder="Detail your issue here"></textarea>
+                                    </div>
+                                    <div style="display: flex; gap: 1rem;">
+                                        <div class="input-group" style="flex: 1;">
+                                            <label>Date of Incident</label>
+                                            <input type="date" id="comp-inc-date" required>
+                                        </div>
+                                        <div class="input-group" style="flex: 1;">
+                                            <label>Time</label>
+                                            <input type="time" id="comp-inc-time" required>
+                                        </div>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Location</label>
+                                        <input type="text" id="comp-inc-loc" required placeholder="Where did it happen?">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Employee(s) Involved (if any)</label>
+                                        <input type="text" id="comp-inc-emp" placeholder="Names of involved employees">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Requested Resolution</label>
+                                        <textarea id="comp-res" required rows="2" placeholder="What do you want to happen?"></textarea>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Electronic Signature (Type your name)</label>
+                                        <input type="text" id="comp-signature" required placeholder="Your full name">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary mt-2" style="background: #dc2626; border: none;">Submit Complaint</button>
+                                </form>
+                            </div>
+                            <div>
+                                <h3>My Complaints</h3>
+                                <div id="staff-complaints-list" class="list-container" style="max-height: 500px; overflow-y: auto;">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Staff OTP Module -->
+                <div id="staff-otp-module" style="display: none;">
+                    <button class="btn btn-secondary mb-4" onclick="window.closeStaffModules()" style="background: #334155; border: none;">&larr; Back to Dashboard</button>
+                    <div class="glass-panel">
+                        <h2 style="margin-top: 0;">Submit Delivery OTP</h2>
+                        <form id="otp-submit-form" style="max-width: 500px; margin-top: 1.5rem;">
+                            <div class="input-group">
+                                <label>Assigned Shop</label>
+                                <select id="otp-shop-select" required>
+                                    <option value="">-- Select Shop --</option>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>OTP Code</label>
+                                <input type="number" id="otp-code" placeholder="Enter 4 to 8 digit OTP" required min="1000" max="99999999">
+                            </div>
+                            <div class="input-group">
+                                <label>Order Amount (₹)</label>
+                                <input type="number" id="otp-amount" placeholder="Total order amount" required step="0.01" min="0">
+                            </div>
+                            <div class="input-group">
+                                <label>Delivery Fee / Discount (₹)</label>
+                                <input type="number" id="otp-fee" placeholder="Fee or discount amount" step="0.01" value="0">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; background: #ea580c; border: none;">Submit OTP & Complete Delivery</button>
+                        </form>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+    </div>
+
+    <!-- Modals -->
+    <!-- Complaint A4 Printable Modal -->
+    <div id="modal-complaint-a4" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto; padding: 2rem;">
+        <div style="background: white; color: black; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 10mm; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); box-sizing: border-box;">
+            <button class="btn btn-secondary no-print" onclick="closeModal('modal-complaint-a4')" style="position: absolute; top: -40px; right: 0;">Close</button>
+            <button class="btn btn-primary no-print" onclick="printComplaintA4()" style="position: absolute; top: -40px; right: 80px;">Print A4</button>
+            
+            <div style="text-align: center; margin-bottom: 5px;">
+                <img src="logo.png" alt="AURA Dispatch Logo" style="max-width: 80px; display: block; margin: 0 auto 2px;">
+                <h2 style="margin: 0 0 5px 0; font-size: 14px; font-weight: normal; border-bottom: 2px solid black; padding-bottom: 2px; display: inline-block;">STAFF COMPLAINT APPLICATION FORM</h2>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 10px;">
+                <div>Complaint ID: <strong id="print-comp-id"></strong></div>
+                <div style="text-align: right;">
+                    <div>App Date: <strong id="print-comp-app-date"></strong></div>
+                    <div>App Time: <strong id="print-comp-app-time"></strong></div>
+                </div>
+            </div>
+            
+            <hr style="border-top: 1px solid #ccc; margin: 5px 0;">
+            
+            <h3 style="font-size: 12px; margin-bottom: 2px;">1. Staff Information</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 10px; margin-bottom: 5px;">
+                <div>Employee Name: <strong style="border-bottom: 1px solid #ccc;" id="print-comp-name"></strong></div>
+                <div>Employee ID: <strong style="border-bottom: 1px solid #ccc;" id="print-comp-staffid"></strong></div>
+                <div>Department: <strong style="border-bottom: 1px solid #ccc;" id="print-comp-dept"></strong></div>
+                <div>Designation: <strong style="border-bottom: 1px solid #ccc;" id="print-comp-desig"></strong></div>
+                <div>Mobile: <strong style="border-bottom: 1px solid #ccc;" id="print-comp-mob"></strong></div>
+                <div>Email: <strong style="border-bottom: 1px solid #ccc;" id="print-comp-email"></strong></div>
+            </div>
+
+            <hr style="border-top: 1px solid #ccc; margin: 5px 0;">
+
+            <h3 style="font-size: 12px; margin-bottom: 2px;">2. Complaint Information</h3>
+            <div style="font-size: 10px; margin-bottom: 5px;">
+                Category: <strong id="print-comp-cat" style="border-bottom: 1px solid #ccc;"></strong>
+            </div>
+
+            <hr style="border-top: 1px solid #ccc; margin: 5px 0;">
+
+            <h3 style="font-size: 12px; margin-bottom: 2px;">3. Complaint Subject</h3>
+            <div id="print-comp-subj" style="font-size: 10px; min-height: 15px; border-bottom: 1px solid #ccc; font-weight: bold; margin-bottom: 5px;"></div>
+
+            <h3 style="font-size: 12px; margin-bottom: 2px;">4. Complete Description of Complaint</h3>
+            <div id="print-comp-desc" style="font-size: 10px; min-height: 20px; padding: 3px; border: 1px solid #eee; background: #fafafa; white-space: pre-wrap; margin-bottom: 5px;"></div>
+
+            <h3 style="font-size: 12px; margin-bottom: 2px;">5. Incident Details</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 10px; margin-bottom: 5px;">
+                <div>Date of Incident: <strong style="border-bottom: 1px solid #ccc;" id="print-comp-incdate"></strong></div>
+                <div>Time: <strong style="border-bottom: 1px solid #ccc;" id="print-comp-inctime"></strong></div>
+                <div style="grid-column: 1 / -1;">Location: <strong style="border-bottom: 1px solid #ccc;" id="print-comp-incloc"></strong></div>
+                <div style="grid-column: 1 / -1;">Employee(s) Involved: <strong style="border-bottom: 1px solid #ccc;" id="print-comp-incemp"></strong></div>
+            </div>
+
+            <h3 style="font-size: 12px; margin-bottom: 2px;">6. Requested Resolution</h3>
+            <div id="print-comp-reqres" style="font-size: 10px; min-height: 15px; padding: 3px; border: 1px solid #eee; background: #fafafa; white-space: pre-wrap; margin-bottom: 5px;"></div>
+
+            <div style="margin-top: 5px; font-size: 9px; text-align: justify; line-height: 1.1;">
+                <strong>Declaration</strong><br>
+                I hereby declare that the information provided in this complaint application is true and accurate to the best of my knowledge. I understand that providing false information may result in disciplinary action under the Agency Rules and Regulations.
+            </div>
+
+            <div style="margin-top: 10px; display: flex; justify-content: space-between; font-size: 10px;">
+                <div>
+                    <div>Employee Sig: <span id="print-comp-empsig" style="font-family: 'Dancing Script', cursive; font-size: 14px; padding-left: 5px;"></span></div>
+                    <div style="margin-top: 2px;">Name: <span id="print-comp-empname" style="border-bottom: 1px solid #ccc; font-weight: bold;"></span></div>
+                </div>
+            </div>
+            
+            <!-- CEO Reply Section -->
+            <div id="ceo-reply-section" style="margin-top: 5px; display: none;">
+                <hr style="border: 1px solid black; margin-bottom: 5px;">
+                <h3 style="font-size: 12px; color: black; margin-bottom: 2px;">OFFICIAL RESOLUTION (CEO)</h3>
+                <div id="print-ceo-reply-text" style="font-size: 10px; min-height: 20px; padding: 3px; border: 1px solid #ccc; white-space: pre-wrap; font-weight: bold;"></div>
+                
+                <div style="margin-top: 5px; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div style="text-align: center;">
+                        <img id="print-comp-seal" src="" style="width: 70px; height: 70px; opacity: 0.8; display: none;">
+                    </div>
+                    <div style="text-align: right;">
+                        <div id="print-comp-ceosig" style="font-family: 'Dancing Script', cursive; font-size: 20px; color: #1565C0; font-weight: 600;"></div>
+                        <div style="border-top: 1px solid black; padding-top: 2px; margin-top: 2px; font-size: 9px;">Managing Director / CEO</div>
+                        <div id="print-comp-reply-date" style="font-size: 9px; color: #666; margin-top: 2px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CEO Action Tools (Hidden on print) -->
+            <div id="ceo-action-tools" class="no-print" style="margin-top: 40px; padding: 20px; background: #f8fafc; border: 1px solid #cbd5e1; display: none;">
+                <h4 style="margin-top: 0; color: #334155;">CEO Action Panel</h4>
+                <textarea id="ceo-reply-input" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ccc; margin-bottom: 10px;" placeholder="Type resolution/reply here..."></textarea>
+                <button class="btn btn-primary" onclick="submitCeoReply()" style="background: #10b981; border: none; width: 100%;">Mark as Resolved & Sign</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcement List Modal (Staff View) -->
+    <div id="modal-announcement-list" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Official Announcements Inbox</h3>
+                <button class="btn-close" onclick="closeModal('modal-announcement-list')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="staff-announcements-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcement A4 Printable Modal -->
+    <div id="modal-announcement-a4" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto; padding: 2rem;">
+        <div style="background: white; color: black; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 10mm; position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.5); box-sizing: border-box;">
+            <button class="btn btn-secondary no-print" onclick="closeModal('modal-announcement-a4')" style="position: absolute; top: -40px; right: 0;">Close</button>
+            <button class="btn btn-primary no-print" onclick="window.printAnnouncementA4()" style="position: absolute; top: -40px; right: 80px;">Print A4</button>
+            
+            <div style="text-align: center; margin-bottom: 10px;">
+                <img src="logo.png" alt="AURA Dispatch Logo" style="max-width: 100px; display: block; margin: 0 auto 5px;">
+                <h2 style="margin: 0 0 5px 0; font-size: 16px; font-weight: bold; border-bottom: 2px solid black; padding-bottom: 5px; display: inline-block;">OFFICIAL ANNOUNCEMENT</h2>
+            </div>
+            
+            <div style="margin-bottom: 15px; font-size: 12px; line-height: 1.6;">
+                <div>Announcement ID: / LET. ID <strong id="print-ann-id" style="border-bottom: 1px dashed #ccc; padding: 0 10px;"></strong></div>
+                <div>Date: <strong id="print-ann-date" style="border-bottom: 1px dashed #ccc; padding: 0 10px;"></strong></div>
+                <div>Issued By: <strong>CEO</strong></div>
+            </div>
+            
+            <div style="margin-bottom: 15px; font-size: 14px;">
+                <strong>Subject:</strong> <span id="print-ann-subject" style="border-bottom: 1px solid #ccc; font-weight: bold; padding: 0 10px;"></span>
+            </div>
+            
+            <hr style="border-top: 1px solid black; margin: 10px 0;">
+            
+            <div style="font-size: 14px; margin-bottom: 15px; font-weight: bold; text-align: center;">
+                Announcement
+            </div>
+            
+            <div style="font-size: 13px; margin-bottom: 15px;">
+                This is to inform all employees that:
+            </div>
+            
+            <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+            <div id="print-ann-body" style="font-size: 13px; min-height: 80px; padding: 10px; background: #fafafa; border: 1px solid #eee; white-space: pre-wrap; margin-bottom: 10px;"></div>
+            <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+            <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+            
+            <div style="margin-top: 20px; font-size: 11px; text-align: justify; line-height: 1.4; color: #333;">
+                All staff members are requested to read this announcement carefully and comply with the instructions. Failure to follow the stated guidelines may result in disciplinary action as per the Agency Rules and Regulations.<br><br>
+                For any questions or clarifications, please contact the Administration Office or your Reporting Manager.
+            </div>
+            
+            <div style="margin-top: 20px; font-size: 13px;">
+                <strong>Effective Date:</strong> <span id="print-ann-eff-date" style="border-bottom: 1px dashed #ccc; padding: 0 10px; font-weight: bold;"></span>
+            </div>
+            
+            <div style="margin-top: 40px; text-align: right;">
+                <div style="font-size: 13px; font-weight: bold; margin-bottom: 10px;">Approved By:- CEO</div>
+                <div style="display: inline-flex; align-items: flex-end; justify-content: flex-end; gap: 20px;">
+                    <img src="assets/official_seal.png" style="width: 100px; height: 100px; opacity: 0.8;">
+                    <div style="text-align: center;">
+                        <div id="print-ann-ceo-sig" style="font-family: 'Dancing Script', cursive; font-size: 28px; color: #1565C0; font-weight: 600; min-width: 150px; border-bottom: 1px solid black; padding-bottom: 5px; margin-bottom: 5px;"></div>
+                        <div style="font-size: 11px; font-weight: bold;">Official AURA Company Seal & Signature of the CEO</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-loan-details" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>Loan Application Details</h2>
+                <button class="close-btn" onclick="closeModal('modal-loan-details')">×</button>
+            </div>
+            <div class="modal-body" style="padding-top: 1rem;">
+                <div style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
+                    <h3 style="margin-top: 0; color: var(--primary);">Staff Details</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.9rem;">
+                        <div><span style="color: #94a3b8;">Employee Name:</span> <strong id="dtl-loan-name" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Employee ID:</span> <strong id="dtl-loan-id" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Designation/Post:</span> <strong id="dtl-loan-designation" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Department:</span> <strong id="dtl-loan-department" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Mobile Number:</span> <strong id="dtl-loan-mobile" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Email Address:</span> <strong id="dtl-loan-email" style="color: white;"></strong></div>
+                    </div>
+                </div>
+
+                <div style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
+                    <h3 style="margin-top: 0; color: var(--primary);">Loan Details</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.9rem;">
+                        <div><span style="color: #94a3b8;">Requested Loan Amount (₹):</span> <strong id="dtl-loan-req" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Purpose of Loan:</span> <strong id="dtl-loan-purpose" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Repayment Type:</span> <strong id="dtl-loan-type" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Preferred Installment Amount (₹):</span> <strong id="dtl-loan-req-inst" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Agency Civil Score:</span> <strong id="dtl-loan-cibil-score"></strong> <span id="dtl-loan-cibil-badge" class="badge"></span></div>
+                        <div><span style="color: #94a3b8;">Status:</span> <strong id="dtl-loan-status" style="color: #f59e0b;"></strong></div>
+                        <div><span style="color: #94a3b8;">Approved Amount:</span> <strong id="dtl-loan-approved-amt" style="color: #10b981;"></strong></div>
+                    </div>
+                </div>
+
+                <div style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
+                    <h3 style="margin-top: 0; color: var(--primary);">Bank Account Details</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.9rem;">
+                        <div><span style="color: #94a3b8;">Account Holder Name:</span> <strong id="dtl-loan-bank-name" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Account Number:</span> <strong id="dtl-loan-bank-ac" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">IFSC Code:</span> <strong id="dtl-loan-bank-ifsc" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Bank Name:</span> <strong id="dtl-loan-bank-bankname" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Branch Address:</span> <strong id="dtl-loan-bank-branch" style="color: white;"></strong></div>
+                    </div>
+                </div>
+
+                <div style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; margin-bottom: 1rem;">
+                    <h3 style="margin-top: 0; color: var(--primary);">Witness Details</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.9rem;">
+                        <div><span style="color: #94a3b8;">Witness Name:</span> <strong id="dtl-loan-witness-name" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Witness Mobile Number:</span> <strong id="dtl-loan-witness-mobile" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Relationship with Applicant:</span> <strong id="dtl-loan-witness-relation" style="color: white;"></strong></div>
+                    </div>
+                </div>
+
+                <!-- Repayment Progress (shown for active loans) -->
+                <div id="dtl-repayment-section" style="display:none; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <h4 style="margin: 0 0 0.75rem 0; color: #10b981;">📊 Repayment Progress</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                        <div><span style="color: #94a3b8;">Installments Paid:</span> <strong id="dtl-inst-paid" style="color: white;"></strong></div>
+                        <div><span style="color: #94a3b8;">Installments Remaining:</span> <strong id="dtl-inst-remaining" style="color: #f59e0b;"></strong></div>
+                        <div><span style="color: #94a3b8;">Total Paid to Agency:</span> <strong id="dtl-total-paid" style="color: #10b981;"></strong></div>
+                        <div><span style="color: #94a3b8;">Balance Outstanding:</span> <strong id="dtl-outstanding" style="color: #ef4444;"></strong></div>
+                    </div>
+                    <div style="margin-top: 0.75rem; background: rgba(0,0,0,0.2); border-radius: 4px; overflow: hidden; height: 8px;">
+                        <div id="dtl-repay-bar" style="height: 100%; background: linear-gradient(90deg, #10b981, #34d399); transition: width 0.5s;"></div>
+                    </div>
+                    <div id="dtl-repay-pct" style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.3rem; text-align: right;"></div>
+                </div>
+                
+                <div id="dtl-action-staff" style="display: none; margin-top: 1rem;"></div>
+                <div id="dtl-action-finance" style="display: none; gap: 1rem; margin-top: 1rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-loan-verify" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Verify & Set Loan Terms</h2>
+                <button class="close-btn" onclick="closeModal('modal-loan-verify')">×</button>
+            </div>
+            <form id="loan-verify-form" class="modal-body">
+                <input type="hidden" id="verify-loan-id">
+                <div class="input-group">
+                    <label>Approved Loan Amount (₹)</label>
+                    <input type="number" id="verify-loan-approved" required>
+                </div>
+                <div class="input-group">
+                    <label>Total Installments</label>
+                    <input type="number" id="verify-loan-total-installments" required>
+                </div>
+                <div class="input-group">
+                    <label>Amount per Installment (₹)</label>
+                    <input type="number" id="verify-loan-installment-amt" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Forward to MD for Approval</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-bond-prep" class="modal">
+        <div class="modal-content glass-panel" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>Generate Agreement Bond</h2>
+                <button class="close-btn" onclick="closeModal('modal-bond-prep')">×</button>
+            </div>
+            <form id="bond-prep-form" class="modal-body">
+                <input type="hidden" id="bond-prep-loan-id">
+                <div class="input-group">
+                    <label>Repayment Start Date</label>
+                    <input type="date" id="bond-deduction-date" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Generate Bond & Request Signature</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modal-bond-view" class="modal">
+        <div class="modal-content" style="width: 210mm; min-height: 297mm; max-width: 95vw; background: white; color: black; border-radius: 4px; padding: 0; position: relative; margin: auto; overflow: hidden;">
+            <button id="bond-print-btn" class="btn btn-secondary" onclick="printBond()" style="position: absolute; top: 1rem; right: 4rem; padding: 0.4rem 1rem; background: #64748b; color: white; z-index: 10;">🖨️ Print Bond</button>
+            <button class="close-btn" onclick="closeModal('modal-bond-view')" style="position: absolute; top: 1rem; right: 1rem; color: black; z-index: 10;">×</button>
+            
+            <img src="stamp_paper_500_new.png" alt="500 Rs Stamp" style="width: 100%; height: 280px; object-fit: fill; display: block; border-bottom: 2px solid #ccc;">
+            
+            <h2 style="text-align: center; margin: 0.8rem 0; font-family: serif; font-size: 1.2rem; text-decoration: underline; font-weight: bold; letter-spacing: 1px;">LOAN AGREEMENT</h2>
+            
+            <div style="padding: 1rem 3rem; position: relative; z-index: 2;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; border: 1px solid #ccc; padding: 0.6rem; margin: 0 0 0.6rem 0; background: #fafafa; font-family: serif; font-size: 0.85rem;">
+                    <div><strong>Loan No:</strong> <span id="bond-txt-loan-id"></span></div>
+                    <div><strong>Amount Sanctioned:</strong> ₹<span id="bond-txt-amount"></span></div>
+                    <div><strong>Name:</strong> <span id="bond-txt-name"></span></div>
+                    <div><strong>Staff ID:</strong> <span id="bond-txt-id"></span></div>
+                    <div><strong>Mobile:</strong> <span id="bond-txt-mobile"></span></div>
+                    <div><strong>Designation:</strong> <span id="bond-txt-role"></span></div>
+                    <div><strong>A/C No:</strong> <span id="bond-txt-ac"></span></div>
+                    <div><strong>IFSC:</strong> <span id="bond-txt-ifsc"></span></div>
+                </div>
+                <p style="font-family: serif; font-size: 0.85rem; line-height: 1.3; text-align: justify; margin-bottom: 0;">The Employee agrees to repay the sum of ₹<strong id="bond-txt-amount"></strong> in <strong id="bond-txt-installments"></strong> <strong id="bond-txt-type"></strong> installments of ₹<strong id="bond-txt-installment-amt"></strong> each. The automated deductions will commence from <strong id="bond-txt-deduction-date"></strong>.</p>
+                
+                <div style="font-family: serif; font-size: 0.75rem; line-height: 1.25; text-align: justify; margin-top: 0.6rem; border-top: 1px dashed #ccc; padding-top: 0.6rem;">
+                    <h4 style="margin-bottom: 0.2rem; text-decoration: underline; font-size: 0.85rem;">Terms & Conditions</h4>
+                    <ol style="padding-left: 1.5rem; margin-top: 0; margin-bottom: 0;">
+                        <li>Employee accepts the sanctioned loan amount.</li>
+                        <li>The loan amount, interest rate (if any), and repayment period are clearly mentioned.</li>
+                        <li>EMI or monthly salary deduction starts from the next salary cycle.</li>
+                        <li>The employee authorizes the company to deduct loan installments from salary.</li>
+                        <li>If the employee resigns, retires, or is terminated before full repayment, the outstanding loan becomes immediately payable and may be deducted from the final settlement.</li>
+                        <li>Delay or default in repayment may attract penalties or legal recovery as per the agreement.</li>
+                        <li>The employee must provide accurate information and use the loan for the declared purpose (if required by company policy).</li>
+                        <li>The agreement must be signed by the employee, employer, two witnesses, and, if applicable, executed on the required non-judicial stamp paper according to local legal requirements.</li>
+                        <li>Both parties receive a signed copy of the agreement.</li>
+                        <li>The agreement remains valid until the entire loan, interest (if applicable), and any other agreed charges are fully repaid.</li>
+                    </ol>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 1rem; page-break-inside: avoid;">
+                    <div id="bond-qrcode" style="transform: scale(0.75); transform-origin: left bottom;"></div>
+                    <div style="text-align: center;">
+                        <img src="aura_md_stamp.png" alt="MD Verification Stamp" style="width: 90px; height: 90px; object-fit: contain; opacity: 0.85;">
+                        <div style="font-size: 0.65rem; color: #555; margin-top: 0.1rem;">Official Stamp</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div id="bond-ceo-signature" style="font-family: 'Dancing Script', cursive; font-size: 18px; color: #1565C0; transform: rotate(-5deg); margin-bottom: 2px; min-height: 25px; line-height: 1.2;"></div>
+                        <div style="border-top: 1px solid #000; display: inline-block; padding-top: 2px; width: 100px; text-align: center; font-size: 0.75rem;">
+                            <strong>CEO Signature</strong>
+                        </div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div id="bond-signature-area" style="font-family: 'Brush Script MT', cursive; font-size: 1.1rem; min-height: 25px; border-bottom: 1px solid black; margin-bottom: 0.5rem; color: #1e3a8a;"></div>
+                        <span style="font-size: 0.75rem;">Employee Signature</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bond-staff-actions" style="display: none; margin-top: 2rem; background: #f1f5f9; padding: 1rem; border-radius: 4px; text-align: center;">
+                <label>Type your full name to sign this agreement:</label><br>
+                <input type="text" id="bond-accept-signature" style="margin: 0.5rem 0; padding: 0.5rem; width: 80%;"><br>
+                <button class="btn btn-primary" onclick="staffAcceptBond()">Digitally Sign & Accept</button>
+            </div>
+            
+            <div id="bond-finance-actions" style="display: none; margin-top: 2rem; background: #ecfdf5; padding: 1rem; border-radius: 4px; text-align: center;">
+                <h4 style="color: #065f46; margin: 0 0 1rem 0;">Employee Has Signed Agreement</h4>
+                <button class="btn btn-primary" style="background: #10b981;" onclick="financeDisburseLoan()">Disburse Loan to Staff A/C</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
+
+    <!-- Global Joining Letter Modal/View -->
+    <div id="joining-letter" class="joining-letter hidden">
+        <div class="letter-header">
+            <img src="logo.png" alt="AURA Dispatch Logo" style="max-width: 100px; margin-bottom: 0.5rem;">
+            <h2 style="color: #1e293b; margin-bottom: 0.2rem;">AURA Dispatch</h2>
+            <p>Official Joining Letter</p>
+        </div>
+        <div class="letter-body" id="letter-content">
+            <!-- Filled dynamically -->
+        </div>
+        <button class="btn btn-secondary mt-4" id="print-letter">Print / Close</button>
+    </div>
+
+    <!-- Global Leave Approval Letter Modal/View -->
+    <div id="leave-letter" class="joining-letter hidden">
+        <div class="letter-header">
+            <img src="logo.png" alt="AURA Dispatch Logo" style="max-width: 100px; margin-bottom: 0.5rem;">
+            <h2 style="color: #1e293b; margin-bottom: 0.2rem;">AURA Dispatch</h2>
+            <p>Leave Approval Notice</p>
+        </div>
+        <div class="letter-body" id="leave-letter-content">
+            <!-- Filled dynamically -->
+        </div>
+        <button class="btn btn-secondary mt-4" id="print-leave-letter">Print / Close</button>
+    </div>
+
+
+
+    <!-- Global ID Card Modal -->
+    <div id="idcard-modal" class="joining-letter hidden" style="background: rgba(15, 23, 42, 0.9); display: flex; align-items: center; justify-content: center; z-index: 9999;">
+        <div id="idcard-container" style="
+            width: 338px;
+            height: 565px;
+            background: #FFFFFF;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            font-family: 'Poppins', sans-serif;
+            color: #37474F;
+        ">
+            <!-- Top Gradient & Logo -->
+            <div style="
+                position: absolute;
+                top: 0; left: 0; right: 0; height: 160px;
+                background: linear-gradient(135deg, #0A2342 0%, #1565C0 100%);
+                border-bottom-left-radius: 50% 20px;
+                border-bottom-right-radius: 50% 20px;
+                z-index: 1;
+            ">
+                <!-- Dotted pattern top right -->
+                <div style="position: absolute; top: 10px; right: 10px; width: 50px; height: 50px; background-image: radial-gradient(#64B5F6 1px, transparent 1px); background-size: 10px 10px; opacity: 0.3;"></div>
+            </div>
+            
+            <!-- Watermark Logo -->
+            <div style="
+                position: absolute;
+                top: 60%; left: 50%;
+                transform: translate(-50%, -50%);
+                width: 200px; height: 200px;
+                background-image: url('logo.png');
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+                opacity: 0.06;
+                z-index: 1;
+            "></div>
+            
+            <div style="position: relative; z-index: 2; text-align: center; padding-top: 15px;">
+                <img src="logo.png" alt="AURA" style="width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+                <h2 style="margin: 0; font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 18px; color: #FFFFFF; letter-spacing: 1px;">AURA DISPATCH</h2>
+            </div>
+
+            <!-- Photo -->
+            <div style="position: relative; z-index: 3; text-align: center; margin-top: 5px;">
+                <div style="
+                    width: 100px; height: 100px;
+                    border-radius: 50%;
+                    background: #F5F7FA;
+                    margin: 0 auto;
+                    border: 4px solid #FFFFFF;
+                    box-shadow: 0 0 0 3px #1565C0, 0 4px 10px rgba(0,0,0,0.15);
+                    display: flex; align-items: center; justify-content: center;
+                    overflow: hidden;
+                ">
+                    <!-- Placeholder Silhouette -->
+                    <svg viewBox="0 0 24 24" width="70" height="70" fill="#E0E0E0">
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Details -->
+            <div style="text-align: center; margin-top: 10px; position: relative; z-index: 2;">
+                <h1 id="idcard-name" style="margin: 0 auto; max-width: 90%; font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 18px; line-height: 1.2; color: #0A2342; text-transform: uppercase; word-wrap: break-word;">JOHN DOE</h1>
+                <div id="idcard-role" style="display: inline-block; background: #1565C0; color: #FFFFFF; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 13px; padding: 3px 12px; border-radius: 15px; margin-top: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 90%; word-wrap: break-word;">DELIVERY EXECUTIVE</div>
+                
+                <div style="margin-top: 8px;">
+                    <span style="border: 1px solid #2196F3; color: #1565C0; padding: 2px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; background: #FFFFFF;">ID: <span id="idcard-empid">EMP-1001</span></span>
+                </div>
+            </div>
+
+            <!-- Info Grid -->
+            <div style="display: flex; margin-top: 15px; padding: 0 20px; position: relative; z-index: 2;">
+                <div style="flex: 1; padding-right: 10px; border-right: 1px solid #E0E0E0;">
+                    <div style="margin-bottom: 8px;">
+                        <div style="font-size: 10px; color: #2196F3; display: flex; align-items: center;"><span style="margin-right: 4px;">🏢</span> Department</div>
+                        <div id="idcard-dept-val" style="font-size: 12px; font-weight: 600; border-bottom: 1px solid #E0E0E0; padding-bottom: 2px; min-height: 16px; height: auto; word-wrap: break-word;"></div>
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <div style="font-size: 10px; color: #2196F3; display: flex; align-items: center;"><span style="margin-right: 4px;">📅</span> Joined</div>
+                        <div id="idcard-joined-val" style="font-size: 12px; font-weight: 600; border-bottom: 1px solid #E0E0E0; padding-bottom: 2px; min-height: 16px; height: auto; word-wrap: break-word;"></div>
+                    </div>
+                    <div>
+                        <div style="font-size: 10px; color: #2196F3; display: flex; align-items: center;"><span style="margin-right: 4px;">🩸</span> Blood Group</div>
+                        <div id="idcard-blood-val" style="font-size: 12px; font-weight: 600; border-bottom: 1px solid #E0E0E0; padding-bottom: 2px; min-height: 16px; height: auto; word-wrap: break-word;"></div>
+                    </div>
+                </div>
+                <div style="flex: 1; padding-left: 10px;">
+                    <div style="margin-bottom: 8px;">
+                        <div style="font-size: 10px; color: #2196F3; display: flex; align-items: center;"><span style="margin-right: 4px;">⏳</span> Valid Till</div>
+                        <div id="idcard-valid-val" style="font-size: 12px; font-weight: 600; border-bottom: 1px solid #E0E0E0; padding-bottom: 2px; min-height: 16px; height: auto; word-wrap: break-word;"></div>
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <div style="font-size: 10px; color: #2196F3; display: flex; align-items: center;"><span style="margin-right: 4px;">📞</span> Contact</div>
+                        <div id="idcard-contact-val" style="font-size: 12px; font-weight: 600; border-bottom: 1px solid #E0E0E0; padding-bottom: 2px; min-height: 16px; height: auto; word-wrap: break-word;"></div>
+                    </div>
+                    <div style="text-align: center; margin-top: 2px;">
+                        <div style="font-size: 9px; color: #64B5F6; margin-bottom: 2px; font-weight: 600;">CEO Sign.</div>
+                        <div id="idcard-digital-signature" style="font-family: 'Dancing Script', cursive; font-size: 20px; color: #1565C0; font-weight: 600; line-height: 1.2; transform: rotate(-5deg);">Arnnav Panda</div>
+                    </div>
+
+                </div>
+            </div>
+
+
+
+            <!-- Bottom Bar -->
+            <div style="
+                position: absolute;
+                bottom: 0; left: 0; right: 0; min-height: 85px; height: auto;
+                background: #0A2342;
+                color: #FFFFFF;
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 10px 20px; text-align: left;
+                border-top-left-radius: 15px;
+                border-top-right-radius: 15px;
+                z-index: 2;
+            ">
+                <div id="idcard-address-display" style="font-size: 9px; line-height: 1.3;">
+                    <span style="color: #64B5F6; font-size: 12px;">📍</span> <strong>AURA DISPATCH PVT. LTD.</strong><br>
+                    Kabisuryanagar, Ganjam, Odisha, India
+                </div>
+                <div style="background: #FFFFFF; border-radius: 4px; padding: 5px; display: flex; align-items: center; justify-content: center;">
+                    <div id="idcard-qrcode"></div>
+                </div>
+            </div>
+            
+            <!-- Bottom Right Gradient Decor -->
+            <div style="
+                position: absolute;
+                bottom: -20px; right: -20px; width: 80px; height: 80px;
+                background: radial-gradient(circle, rgba(33,150,243,0.2) 0%, transparent 70%);
+                z-index: 1;
+            "></div>
+        </div>
+        <div style="position: absolute; top: 20px; right: 20px; display: flex; gap: 10px; z-index: 99999;">
+            <button id="idcard-print-btn" class="btn btn-primary" onclick="printIdCard()" style="display: none;">Print Card</button>
+            <button class="btn btn-secondary" onclick="document.body.classList.remove('printing-idcard'); document.getElementById('idcard-modal').classList.add('hidden')">Close</button>
+        </div>
+    </div>
+
+    <!-- Audio Elements for Reliable TTS -->
+    <audio id="audio-checkin" src="https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=Check+in+granted&tl=en" preload="auto"></audio>
+    <audio id="audio-checkout" src="https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=Check+out+granted&tl=en" preload="auto"></audio>
+    <audio id="audio-timing" src="https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=Waiting+for+the+current+timing&tl=en" preload="auto"></audio>
+    <audio id="audio-already-in" src="https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=Attendance+already+marked+for+today&tl=en" preload="auto"></audio>
+    <audio id="audio-already-out" src="https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=Already+checked+out+for+today&tl=en" preload="auto"></audio>
+    <audio id="audio-please-in" src="https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&q=Please+check+in+first&tl=en" preload="auto"></audio>
+
+    <script>
+        window.addEventListener('error', function(event) {
+            alert("JS Error: " + event.message + " at " + event.filename + ":" + event.lineno);
+        });
+        window.addEventListener('unhandledrejection', function(event) {
+            alert("Unhandled Promise Rejection: " + event.reason);
+        });
+    </script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="js/app.js?v=2.9.57"></script>
+
+    <!-- Daily Salary Payment Report Modal -->
+    <div id="auditor-report-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; overflow-y: auto; padding: 2rem;">
+        <div id="auditor-report-print-content" style="background: white; color: #1e293b; max-width: 900px; margin: 0 auto; padding: 2rem; border-radius: 8px; position: relative; box-sizing: border-box;">
+            <button onclick="document.getElementById('auditor-report-modal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #64748b;">&times;</button>
+            
+            <!-- Report Header -->
+            <div style="text-align: center; margin-bottom: 1rem;">
+                <img src="logo.png" alt="AURA Dispatch Logo" style="max-width: 150px; margin: 0 auto; display: block;">
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #1e3a8a; padding-bottom: 1rem; margin-bottom: 1rem;">
+                <div style="flex: 1;"></div>
+                <div style="text-align: center; flex: 2;">
+                    <h1 style="margin: 0; color: #1e3a8a; font-size: 1.5rem; line-height: 1.2;">DAILY SALARY<br>PAYMENT REPORT</h1>
+                </div>
+                <div style="text-align: right; flex: 1;">
+                    <div style="display: inline-block; border: 1px solid #1e3a8a; padding: 0.5rem; border-radius: 4px; text-align: left;">
+                        <p style="margin: 0; font-weight: bold; color: #1e3a8a; font-size: 0.9rem;">REPORT ID: <span id="rpt-id"></span></p>
+                        <p style="margin: 0; font-size: 0.8rem; color: #64748b;">Date: <span id="rpt-date"></span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submission Details -->
+            <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; background: #f8fafc;">
+                <p style="margin: 0; font-weight: bold; color: #1e293b;">Submitted To: <span style="font-weight: normal;">Chief Executive Officer (CEO)</span></p>
+                <p style="margin: 0.5rem 0 0 0; font-weight: bold; color: #1e293b;">Date of Submission: <span id="rpt-submit-date" style="font-weight: normal;">_______________________</span></p>
+            </div>
+
+            <!-- Two Columns: Salary & Attendance -->
+            <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem;">
+                <div style="flex: 1;">
+                    <h3 style="margin-top: 0; color: #1e3a8a; font-size: 1.1rem; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem;">1. SALARY PAYMENT SUMMARY</h3>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #e0f2fe;">
+                                <th style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: left; color: #1e3a8a;">DESCRIPTION</th>
+                                <th style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: right; color: #1e3a8a;">AMOUNT (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">Total Basic Salary</td>
+                                <td style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: right;" id="rpt-basic-salary"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">Total Bonus Amount</td>
+                                <td style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: right;" id="rpt-bonus"></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">EMIs paid by staff</td>
+                                <td style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: right; color: #ef4444;" id="rpt-deductions"></td>
+                            </tr>
+                            <tr style="background: #e0f2fe; font-weight: bold;">
+                                <td style="padding: 0.5rem; border: 1px solid #cbd5e1; color: #1e3a8a;">NET SALARY PAID</td>
+                                <td style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: right; color: #1e3a8a;" id="rpt-net-salary"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div style="flex: 1;">
+                    <h3 style="margin-top: 0; color: #1e3a8a; font-size: 1.1rem; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem;">2. ATTENDANCE SUMMARY</h3>
+                    <div style="padding: 1rem; border: 1px solid #cbd5e1; border-radius: 4px; background: #f8fafc;">
+                        <p style="margin: 0.5rem 0;">Total Staffs: <strong style="float: right;" id="rpt-att-total"></strong></p>
+                        <p style="margin: 0.5rem 0;">Present: <strong style="float: right; color: #10b981;" id="rpt-att-present"></strong></p>
+                        <p style="margin: 0.5rem 0;">Half Day: <strong style="float: right; color: #f59e0b;" id="rpt-att-half"></strong></p>
+                        <p style="margin: 0.5rem 0;">Absent: <strong style="float: right; color: #ef4444;" id="rpt-att-absent"></strong></p>
+                        <p style="margin: 0.5rem 0;">On Leave: <strong style="float: right; color: #3b82f6;" id="rpt-att-leave"></strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Department Wise Salary -->
+            <div style="margin-bottom: 1.5rem;">
+                <h3 style="margin-top: 0; color: #1e3a8a; font-size: 1.1rem; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem;">3. DEPARTMENT-WISE SALARY</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #e0f2fe;">
+                            <th style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: left; color: #1e3a8a;">DEPARTMENT</th>
+                            <th style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: center; color: #1e3a8a;">EMPLOYEES PAID</th>
+                            <th style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: right; color: #1e3a8a;">TOTAL AMOUNT (₹)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">Delivery Staff</td>
+                            <td style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: center;" id="rpt-dept-del-count"></td>
+                            <td style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: right;" id="rpt-dept-del-amt"></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 0.5rem; border: 1px solid #cbd5e1;">Technical Staff</td>
+                            <td style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: center;" id="rpt-dept-tech-count"></td>
+                            <td style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: right;" id="rpt-dept-tech-amt"></td>
+                        </tr>
+                        <tr style="background: #e0f2fe; font-weight: bold;">
+                            <td style="padding: 0.5rem; border: 1px solid #cbd5e1; color: #1e3a8a; text-align: right;" colspan="2">GRAND TOTAL</td>
+                            <td style="padding: 0.5rem; border: 1px solid #cbd5e1; text-align: right; color: #1e3a8a;" id="rpt-dept-grand"></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Payment & Verification -->
+            <div style="display: flex; gap: 2rem; margin-bottom: 1.5rem;">
+                <div style="flex: 1; position: relative;">
+                    <!-- Watermark -->
+                    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0.05; font-size: 8rem; font-weight: bold; color: #1e3a8a; pointer-events: none;">A</div>
+                    <h3 style="margin-top: 0; color: #1e3a8a; font-size: 1.1rem; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem;">4. PAYMENT METHOD</h3>
+                    <div style="padding: 1rem; display: flex; flex-direction: column; gap: 0.8rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="radio" name="rpt-pay-method" value="Cash"> Cash</label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="radio" name="rpt-pay-method" value="Bank Transfer"> Bank Transfer</label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;"><input type="radio" name="rpt-pay-method" value="UPI"> UPI</label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="radio" name="rpt-pay-method" value="Other"> Other: 
+                            <input type="text" id="rpt-pay-other" style="border: none; border-bottom: 1px solid #cbd5e1; flex: 1; outline: none; background: transparent;">
+                        </label>
+                    </div>
+                </div>
+                <div style="flex: 1.5; border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem; display: flex; gap: 1rem;">
+                    <div style="flex: 1;">
+                        <h3 style="margin-top: 0; color: #1e3a8a; font-size: 1.1rem;">5. AUDITOR VERIFICATION</h3>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="font-size: 0.8rem; color: #64748b;">Auditor Name:</label>
+                            <input type="text" id="rpt-auditor-name" style="width: 100%; border: none; border-bottom: 1px solid #cbd5e1; outline: none; background: transparent; padding: 0.2rem 0;">
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <label style="font-size: 0.8rem; color: #64748b; display: block; margin-bottom: 0.5rem;">Verification Status:</label>
+                            <label style="margin-right: 1rem;"><input type="radio" name="rpt-verify-status" value="Verified"> Verified ✔️</label>
+                            <label><input type="radio" name="rpt-verify-status" value="Pending"> Pending ⏳</label>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.8rem; color: #64748b;">Remarks:</label>
+                            <input type="text" id="rpt-remarks-1" style="width: 100%; border: none; border-bottom: 1px solid #cbd5e1; outline: none; background: transparent; margin-bottom: 0.5rem;">
+                            <input type="text" id="rpt-remarks-2" style="width: 100%; border: none; border-bottom: 1px solid #cbd5e1; outline: none; background: transparent; margin-bottom: 0.5rem;">
+                            <input type="text" id="rpt-remarks-3" style="width: 100%; border: none; border-bottom: 1px solid #cbd5e1; outline: none; background: transparent;">
+                        </div>
+                    </div>
+                    <div style="flex: 1; border-left: 1px solid #cbd5e1; padding-left: 1rem; display: flex; flex-direction: column; justify-content: flex-end;">
+                        <div style="margin-bottom: 2rem;">
+                            <img id="rpt-auditor-sig-img" style="max-height: 50px; display: none; margin: 0 auto;">
+                            <div id="rpt-auditor-sig-text" style="font-family: 'Dancing Script', cursive; font-size: 24px; color: #1e3a8a; text-align: center; min-height: 35px; display: none;"></div>
+                            <div style="border-bottom: 1px solid #1e293b; margin-bottom: 0.5rem; text-align: center;"></div>
+                            <p style="margin: 0; font-size: 0.8rem; text-align: center; color: #64748b;">Auditor e-Signature 👤✔️</p>
+                        </div>
+                        <div style="margin-bottom: 2rem;">
+                            <img id="rpt-ceo-sig-img" style="max-height: 50px; display: none; margin: 0 auto;">
+                            <div id="rpt-ceo-sig-text" style="font-family: 'Dancing Script', cursive; font-size: 24px; color: #1565C0; text-align: center; min-height: 35px; display: none;"></div>
+                            <div style="border-bottom: 1px solid #1e293b; margin-bottom: 0.5rem; text-align: center;"></div>
+                            <p style="margin: 0; font-size: 0.8rem; text-align: center; color: #64748b;">CEO Signature 👤✔️</p>
+                        </div>
+                        <div style="margin-bottom: 2rem;">
+                            <div id="rpt-md-sig-text" style="font-family: 'Dancing Script', cursive; font-size: 24px; color: #3b82f6; text-align: center; min-height: 35px; display: none;"></div>
+                            <div style="border-bottom: 1px solid #1e293b; margin-bottom: 0.5rem; text-align: center;"></div>
+                            <p style="margin: 0; font-size: 0.8rem; text-align: center; color: #64748b;">MD Signature 👤✔️</p>
+                        </div>
+                        <div style="margin-bottom: 2rem;">
+                            <div id="rpt-fm-sig-text" style="font-family: 'Dancing Script', cursive; font-size: 24px; color: #8b5cf6; text-align: center; min-height: 35px; display: none;"></div>
+                            <div style="border-bottom: 1px solid #1e293b; margin-bottom: 0.5rem; text-align: center;"></div>
+                            <p style="margin: 0; font-size: 0.8rem; text-align: center; color: #64748b;">Finance Manager 👤✔️</p>
+                        </div>
+                        <div>
+                            <div id="rpt-om-sig-text" style="font-family: 'Dancing Script', cursive; font-size: 24px; color: #10b981; text-align: center; min-height: 35px; display: none;"></div>
+                            <div style="border-bottom: 1px solid #1e293b; margin-bottom: 0.5rem; text-align: center;"></div>
+                            <p style="margin: 0; font-size: 0.8rem; text-align: center; color: #64748b;">Operations Manager 👤✔️</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Notes -->
+            <div style="border: 1px solid #cbd5e1; border-radius: 8px; min-height: 120px; margin-bottom: 1rem; padding: 1rem; position: relative;">
+                <div style="color: #94a3b8; font-style: italic; margin-bottom: 1rem;">Additional Notes / Stamps:</div>
+                <div style="display: flex; justify-content: space-around; align-items: center;">
+                    <img src="assets/verification_stamp.png" alt="Verification Stamp" style="max-width: 120px; mix-blend-mode: multiply;">
+                    <img src="assets/md_stamp.png" alt="MD Approved Stamp" style="max-width: 120px; mix-blend-mode: multiply;">
+                    <img src="assets/official_seal.png" alt="Official Seal" style="max-width: 130px; mix-blend-mode: multiply; opacity: 0.9;">
+                </div>
+            </div>
+            
+            <div style="background: #1e3a8a; height: 20px; border-radius: 4px; position: relative; overflow: hidden; margin-bottom: 2rem;">
+                <div style="position: absolute; top: 0; left: 0; width: 30px; height: 100%; background: repeating-linear-gradient(45deg, transparent, transparent 5px, #3b82f6 5px, #3b82f6 10px);"></div>
+                <div style="position: absolute; top: 0; right: 0; width: 30px; height: 100%; background: repeating-linear-gradient(-45deg, transparent, transparent 5px, #3b82f6 5px, #3b82f6 10px);"></div>
+            </div>
+
+            <div style="text-align: center;" id="auditor-report-actions">
+                <button class="btn btn-primary" id="finalize-report-btn" onclick="window.submitDailySalaryReport()" style="background: #1e3a8a; border-color: #1e3a8a; padding: 0.8rem 2rem; font-size: 1.1rem;">Finalize & Save Report</button>
+                <button class="btn btn-secondary" id="print-auditor-report-btn" onclick="window.printAuditorReport()" style="display: none; padding: 0.8rem 2rem; font-size: 1.1rem; margin-right: 1rem;">Print Report</button>
+                <button class="btn btn-danger" id="delete-auditor-report-btn" onclick="window.deleteAuditorReport()" style="display: none; padding: 0.8rem 2rem; font-size: 1.1rem; background: #ef4444; color: white; border: none; border-radius: 8px;">Delete Report</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QR Scanner Modal -->
+    <div id="qr-scan-modal" class="modal" style="display: none; align-items: center; justify-content: center;">
+        <div class="modal-content" style="max-width: 500px; text-align: center;">
+            <h2>Scan Order QR Code</h2>
+            <p style="color: #94a3b8; margin-bottom: 1rem;">Please scan the QR code on the package to automatically extract delivery details.</p>
+            <div id="qr-reader" style="width: 100%; margin-bottom: 1rem; border-radius: 8px; overflow: hidden;"></div>
+            <button class="btn btn-secondary" onclick="window.closeQRScanner()" style="width: 100%;">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Paid Bill (Thermal Receipt) Modal -->
+    <div id="paid-bill-modal" class="modal" style="display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.9);">
+        <div class="modal-content" style="max-width: 450px; background: transparent; box-shadow: none; padding: 0; max-height: 90vh; overflow-y: auto; overflow-x: hidden;">
+            <div class="thermal-receipt-container" id="thermal-receipt-content">
+                <div class="receipt-header">
+                    <h2>AURA DISPATCH</h2>
+                    <p>OFFICIAL PAID BILL</p>
+                    <p>--------------------------------</p>
+                </div>
+                <div class="receipt-body">
+                    <p><strong>Receipt No:</strong> <span id="bill-receipt-no"></span></p>
+                    <p><strong>Date:</strong> <span id="bill-date"></span></p>
+                    <p><strong>Shop:</strong> <span id="bill-shop"></span></p>
+                    <p><strong>Customer:</strong> <span id="bill-customer"></span></p>
+                    <p><strong>Phone:</strong> <span id="bill-phone"></span></p>
+                    <p>--------------------------------</p>
+                    <p><strong>Staff Name:</strong> <span id="bill-staff-name"></span></p>
+                    <p><strong>Staff ID:</strong> <span id="bill-staff-id"></span></p>
+                    <p>--------------------------------</p>
+                    <p><strong>Order Amount:</strong> ₹<span id="bill-order-amount"></span></p>
+                    <p><strong>Delivery Fee/Disc:</strong> ₹<span id="bill-fee-amount"></span></p>
+                    <p>--------------------------------</p>
+                    <p class="receipt-total"><strong>TOTAL PAID:</strong> ₹<span id="bill-price"></span></p>
+                </div>
+                <div class="receipt-footer">
+                    <p>--------------------------------</p>
+                    <div id="bill-qrcode" style="display: flex; justify-content: center; margin: 10px 0;"></div>
+                    <p>Thank you for using AURA Dispatch!</p>
+                    <p>Delivery verified and marked as PAID.</p>
+                </div>
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                <button class="btn btn-primary" onclick="window.printPaidBill()" style="flex: 1; padding: 1rem;">Print Receipt</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('paid-bill-modal').style.display='none'; document.getElementById('staff-otp-module').style.display='block';" style="flex: 1; padding: 1rem;">Close</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
